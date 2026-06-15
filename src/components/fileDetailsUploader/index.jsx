@@ -4,6 +4,7 @@ import BorderedButton from "../shared/borderedButton";
 import ApiInstance from "@/constants/api-instance";
 import { useTranslation } from "react-i18next";
 import LoadingElement from "../shared/loading";
+import FileMetaInputs from "@/components/shared/fileMetaInputs";
 
 const getToday = () => new Date().toISOString().split("T")[0];
 
@@ -87,19 +88,11 @@ const FileUploaderDetail = ({ id, refetch }) => {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <input
-        type="text"
-        className="h-[38px] rounded-full border border-[#E5E7EB] px-4 text-[0.75rem] outline-none focus:border-primary"
-        placeholder="اسم الملف"
-        value={fileName}
-        onChange={event => setFileName(event.target.value)}
-        disabled={loading}
-      />
-      <input
-        type="date"
-        className="h-[38px] rounded-full border border-[#E5E7EB] px-4 text-[0.75rem] outline-none focus:border-primary"
-        value={fileDate}
-        onChange={event => setFileDate(event.target.value)}
+      <FileMetaInputs
+        fileName={fileName}
+        setFileName={setFileName}
+        fileDate={fileDate}
+        setFileDate={setFileDate}
         disabled={loading}
       />
       <BorderedButton
