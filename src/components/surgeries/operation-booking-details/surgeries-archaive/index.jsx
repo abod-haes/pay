@@ -1,99 +1,88 @@
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import FileUploader from "@/components/shared/fileUploader";
-import { useState } from "react";
 import Card from "@/components/card";
 import TitleOfSections from "../../titleOfSections";
 
+const getFileDate = file => {
+  if (file?.date) return file.date;
+  if (file?.created_at) return String(file.created_at).split(" ")[0];
+  if (file?.updated_at) return String(file.updated_at).split(" ")[0];
+  return "";
+};
+
+const normalizeFile = file => ({
+  id: file?.id || file?.media_id || file?.url,
+  name: file?.name || file?.file_name || "-",
+  date: getFileDate(file),
+  type: file?.type || file?.mime_type,
+  url: file?.url,
+  uploading: Boolean(file?.uploading),
+  media_id: file?.media_id || file?.id,
+});
+
+const uniqFiles = files => {
+  const seen = new Set();
+
+  return files.filter(file => {
+    const key = file?.media_id || file?.id || file?.url || file?.name;
+
+    if (!key || seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+};
+
 const SurgeriesArchaive = ({
-  control,
-  setBeforeEyebrowFiles,
-  beforeEyebrowFiles,
-  afterThreadOpenFiles,
-  setAfterThreadOpenFiles,
-  afterSecondSessionFiles,
-  setAfterSecondSessionFiles,
-  afterFirstSessionFiles,
-  setAfterFirstSessionFiles,
-  setAfterEyebrowFiles,
-  afterEyebrowFiles,
-  title1,
-  title2,
+  beforeEyebrowFiles = [],
+  afterThreadOpenFiles = [],
+  afterSecondSessionFiles = [],
+  afterFirstSessionFiles = [],
+  afterEyebrowFiles = [],
 }) => {
   const { t } = useTranslation();
+
+  const operationFiles = useMemo(
+    () =>
+      uniqFiles([
+        ...beforeEyebrowFiles,
+        ...afterEyebrowFiles,
+        ...afterThreadOpenFiles,
+        ...afterFirstSessionFiles,
+        ...afterSecondSessionFiles,
+      ]).map(normalizeFile),
+    [
+      beforeEyebrowFiles,
+      afterEyebrowFiles,
+      afterThreadOpenFiles,
+      afterFirstSessionFiles,
+      afterSecondSessionFiles,
+    ]
+  );
+
   const [files, setFiles] = useState([]);
-  const handleRemoveFile = file => {
-    setFiles(prev => prev.filter(f => f.id !== file.id));
-  };
+
+  useEffect(() => {
+    setFiles(operationFiles);
+  }, [operationFiles]);
+
   return (
-    <div className="flex flex-col gap-[16px] mt-[24px]">
+    <div className="flex w-full flex-col gap-[16px] mt-[24px]">
       <TitleOfSections title={t("surgeries.surgeries-archaive")} />
-      <Card otherStyle={"flex gap-[16px] !py-6 !px-6"}>
-        <div className="grid gap-4 flex-1">
-          <p className="font-normal text-[0.9rem] leading-[125%]">
-            <p className="font-normal text-[0.9rem] leading-[125%]">{title1}</p>
-          </p>
+      <Card otherStyle={"grid gap-[16px] !py-6 !px-6"}>
+        <div className="grid gap-4">
+          <p className="font-normal text-[0.9rem] leading-[125%]">ملفات العملية</p>
           <FileUploader
-            files={beforeEyebrowFiles}
-            setFiles={setBeforeEyebrowFiles}
-            removeFile={file => setBeforeEyebrowFiles(prev => prev.filter(f => f.id !== file.id))}
-            name="before_eyebrow_transplant_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4 flex-1">
-          <p className="font-normal text-[0.9rem] leading-[125%]">{title2}</p>
-          <FileUploader
-            files={afterEyebrowFiles}
-            setFiles={setAfterEyebrowFiles}
-            removeFile={file => setAfterEyebrowFiles(prev => prev.filter(f => f.id !== file.id))}
-            name="after_eyebrow_transplant_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4 flex-1">
-          <p className="font-normal text-[0.9rem] leading-[125%]">{t("surgeries.after-opening")}</p>
-          <FileUploader
-            files={afterThreadOpenFiles}
-            setFiles={setAfterThreadOpenFiles}
-            removeFile={file => setAfterThreadOpenFiles(prev => prev.filter(f => f.id !== file.id))}
-            name="after_first_session_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4 flex-1">
-          <p className="font-normal text-[0.9rem] leading-[125%]">{t("surgeries.after-meso")}</p>
-          <FileUploader
-            files={afterFirstSessionFiles}
-            setFiles={setAfterFirstSessionFiles}
-            removeFile={file =>
-              setAfterFirstSessionFiles(prev => prev.filter(f => f.id !== file.id))
-            }
-            name="after_second_session_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4 flex-1">
-          <p className="font-normal text-[0.9rem] leading-[125%]">
-            {t("surgeries.after-second-meso")}
-          </p>
-          <FileUploader
-            files={afterSecondSessionFiles}
-            setFiles={setAfterSecondSessionFiles}
-            removeFile={file =>
-              setAfterSecondSessionFiles(prev => prev.filter(f => f.id !== file.id))
-            }
-            name="after_thread_open_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
+            files={files}
+            setFiles={setFiles}
+            removeFile={file => setFiles(prev => prev.filter(f => f.id !== file.id))}
+            name="attachments_ids"
+            placeholder="رفع ملف مع الاسم والتاريخ"
+            maxFiles={20}
+            tableView
           />
         </div>
       </Card>
