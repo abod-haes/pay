@@ -17,6 +17,7 @@ import DeleteModal from "@/components/shared/modals/deleteModal";
 import { showSuccess } from "@/libs/react.toastify";
 import { apis } from "@/apis/patients/api";
 import LoadingSection from "@/components/loadingSection";
+import Booking from "@/pages/booking/reservation-patients";
 import FileUploaderDetail from "@/components/fileDetailsUploader";
 import { PERMISSION_ACTION, PERMISSION_GROUP } from "@/constants/constants";
 import { Can } from "@/components/shared/can/can";
@@ -76,42 +77,6 @@ export default function PatientFile() {
             </div>
           );
         },
-      },
-    ],
-    [t]
-  );
-
-  const bookingColumns = useMemo(
-    () => [
-      {
-        accessorKey: "id_show",
-        header: "#",
-        enableColumnFilter: true,
-      },
-      {
-        accessorKey: "title",
-        header: t("booking.service"),
-        enableColumnFilter: true,
-      },
-      {
-        accessorKey: "date",
-        header: t("delayed.date"),
-        enableColumnFilter: true,
-      },
-      {
-        accessorKey: "time",
-        header: t("common.time"),
-        enableColumnFilter: true,
-      },
-      {
-        accessorKey: "status",
-        header: t("booking.status"),
-        enableColumnFilter: true,
-      },
-      {
-        accessorKey: "employee",
-        header: t("surgeries.admin-name"),
-        enableColumnFilter: true,
       },
     ],
     [t]
@@ -208,26 +173,6 @@ export default function PatientFile() {
         date: item.date || item.created_at,
       })) || [],
     [data?.data]
-  );
-
-  const bookingsRowData = useMemo(
-    () =>
-      dataToReset?.bookings?.map((item, index) => {
-        const [date, time] = String(item?.date || "").split(" ");
-        return {
-          id: item.id,
-          id_show: index + 1,
-          title: item?.title || item?.service?.name || item?.service || "-",
-          date: date || item?.booking_date || "-",
-          time: time || item?.time || "-",
-          status: item?.booking_status?.name || item?.booking_status?.type || item?.status?.name || "-",
-          employee: item?.employee?.full_name || item?.doctor?.full_name || "-",
-          patientx: dataToReset,
-          service: item?.service?.name || item?.service || item?.title,
-          total: item?.total,
-        };
-      }) || [],
-    [dataToReset]
   );
 
   const handelDelete = async () => {
@@ -333,24 +278,7 @@ export default function PatientFile() {
         </div>
       </Card>
       <p className="text-primary font-main text-[1rem] mb-4">{t("patient.reservation")}</p>
-      <Table
-        data={bookingsRowData || []}
-        columns={bookingColumns}
-        pageSize={state.pageSize}
-        pageIndex={state.pageIndex}
-        onPageSizeChange={handlePageSizeChange}
-        onPreviousPage={handlePreviousPage}
-        onNextPage={handleNextPage2}
-        onGotoPage={handleGotoPage}
-        permissionGroup={PERMISSION_GROUP.Booking}
-        hasSearch={false}
-        hasColumnFilters={false}
-        isLoading={isLoading}
-        hideFilter
-        hasPagination={false}
-        customHeight={400}
-        hasStickyBreadcrumb={true}
-      />
+      <Booking patient_id={Number(id)} hideTitle customHeight={400} />
       <div className="flex items-center justify-between">
         <p className="text-primary font-main text-[1rem] mb-4">{t("patient.file")}</p>
 
