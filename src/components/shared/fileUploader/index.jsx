@@ -17,6 +17,7 @@ import ApiInstance from "@/constants/api-instance";
 import { handleBackendErrors } from "@/utils/helpers";
 import { API_BASE_URL } from "@/constants/domain";
 import FileMetaInputs from "@/components/shared/fileMetaInputs";
+import BorderedButton from "@/components/shared/borderedButton";
 
 const acceptedTypes = [
   "application/pdf",
@@ -50,12 +51,13 @@ const getFileIcon = type => {
 
 const FileUploader = ({
   maxFiles = 5,
-  files,
+  files = [],
   setFiles,
   disable,
   placeholder,
   removeFile,
   onExistingFileDelete,
+  tableView = false,
 }) => {
   const [error, setError] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
@@ -66,6 +68,7 @@ const FileUploader = ({
   const inputRef = useRef();
   const { i18n } = useTranslation();
   const isRTL = ["ar", "fa"].includes(i18n.language);
+  const safeFiles = Array.isArray(files) ? files : [];
 
   const uploadFile = async (file, tempId, meta = {}) => {
     const formData = new FormData();
@@ -178,7 +181,7 @@ const FileUploader = ({
   const onFileChange = e => {
     const selectedFiles = Array.from(e.target.files);
 
-    if (files.length + selectedFiles.length > maxFiles) {
+    if (safeFiles.length + selectedFiles.length > maxFiles) {
       setError(`لا يمكنك رفع أكثر من ${maxFiles} ملفات`);
       return;
     }
@@ -204,17 +207,149 @@ const FileUploader = ({
     }
   };
 
+  const renderFileActions = file => {
+    const isUploading = file.uploading;
+
+    return (
+      <div className="flex items-center justify-center gap-1">
+        <button type="button" onClick={() => downloadFile(file)} disabled={isUploading}>
+          <img src={download} alt="download" className="w-4 h-4 cursor-pointer" />
+        </button>
+
+        <button
+          type="button"
+          disabled={isUploading || !file.url}
+          onClick={() => window.open(file.url, "_blank")}
+          className={`p-1 cursor-pointer rounded ${isUploading ? "opacity-40" : "hover:bg-gray-200"}`}
+        >
+          <img src={view} alt="view" className="w-4 h-4" />
+        </button>
+
+        <button
+          type="button"
+          disabled={isUploading || deleting[file.media_id]}
+          onClick={() => deleteFile(file)}
+          className={`p-1 cursor-pointer rounded ${
+            isUploading || deleting[file.media_id] ? "opacity-40 cursor-not-allowed" : "hover:bg-red-100"
+          }`}
+        >
+          {deleting[file.media_id] ? (
+            <svg
+              className="animate-spin h-4 w-4 text-red-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+          ) : (
+            <img src={trash} alt="delete" className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+    );
+  };
+
+  const hiddenFileInput = (
+    <input
+      type="file"
+      ref={inputRef}
+      className="hidden"
+      multiple={maxFiles > 1}
+      accept={acceptedTypes.join(",")}
+      onChange={onFileChange}
+      disabled={disable}
+    />
+  );
+
+  if (tableView) {
+    return (
+      <div dir={isRTL ? "rtl" : "ltr"} className="flex flex-col gap-3">
+        {hiddenFileInput}
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <FileMetaInputs
+            fileName={fileName}
+            setFileName={setFileName}
+            fileDate={fileDate}
+            setFileDate={setFileDate}
+            disabled={disable}
+          />
+          <BorderedButton
+            text="إضافة ملف"
+            border="border border-primary"
+            textColor="text-primary"
+            onClick={handleOpenFileDialog}
+            disabled={disable}
+          />
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-[#E5E7EB] bg-white">
+          <table className="min-w-full text-right text-[0.75rem]">
+            <thead className="bg-[#F9FAFB] text-accent">
+              <tr>
+                <th className="px-3 py-3 font-main">#</th>
+                <th className="px-3 py-3 font-main">اسم الملف</th>
+                <th className="px-3 py-3 font-main">التاريخ</th>
+                <th className="px-3 py-3 text-center font-main">الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {safeFiles.length ? (
+                safeFiles.map((file, idx) => {
+                  const progress = progresses[file.id] || 0;
+                  const isUploading = file.uploading;
+
+                  return (
+                    <tr key={(file.id || file.name) + idx} className="border-t border-[#E5E7EB]">
+                      <td className="px-3 py-3 text-[#333]">{idx + 1}</td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(file.type)}
+                          <div className="flex min-w-0 flex-col">
+                            <span className="truncate text-[#333]">{file.name || "-"}</span>
+                            {isUploading && (
+                              <span className="text-[0.65rem] text-primary">جاري الرفع {progress}%</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-[#333]">{file.date || "-"}</td>
+                      <td className="px-3 py-3">{renderFileActions(file)}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-3 py-6 text-center text-accent">
+                    لا توجد ملفات مرفقة
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+      </div>
+    );
+  }
+
   return (
     <div dir={isRTL ? "rtl" : "ltr"}>
-      <input
-        type="file"
-        ref={inputRef}
-        className="hidden"
-        multiple={maxFiles > 1}
-        accept={acceptedTypes.join(",")}
-        onChange={onFileChange}
-        disabled={disable}
-      />
+      {hiddenFileInput}
 
       <FileMetaInputs
         fileName={fileName}
@@ -237,7 +372,7 @@ const FileUploader = ({
 
       <div className="flex flex-col gap-2 mt-4">
         <AnimatePresence>
-          {files.map((file, idx) => {
+          {safeFiles.map((file, idx) => {
             const progress = progresses[file.id] || 0;
             const isUploading = file.uploading;
             return (
@@ -258,63 +393,7 @@ const FileUploader = ({
                   </div>
 
                   {/* أزرار */}
-                  <div className="flex items-center gap-1">
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => downloadFile(file)}
-                        disabled={isUploading}
-                      >
-                        <img src={download} alt="download" className="w-4 h-4 cursor-pointer" />
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={isUploading}
-                        onClick={() => window.open(file.url, "_blank")}
-                        className={`p-1 cursor-pointer rounded ${
-                          isUploading ? "opacity-40" : "hover:bg-gray-200"
-                        }`}
-                      >
-                        <img src={view} alt="view" className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={isUploading || deleting[file.media_id]}
-                      onClick={() => deleteFile(file)}
-                      className={`p-1 cursor-pointer rounded ${
-                        isUploading || deleting[file.media_id]
-                          ? "opacity-40 cursor-not-allowed"
-                          : "hover:bg-red-100"
-                      }`}
-                    >
-                      {deleting[file.media_id] ? (
-                        <svg
-                          className="animate-spin h-4 w-4 text-red-500"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          />
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                          />
-                        </svg>
-                      ) : (
-                        <img src={trash} alt="delete" className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
+                  <div className="flex items-center gap-1">{renderFileActions(file)}</div>
                 </div>
 
                 {/* progress bar كخط تحت الكارت */}
