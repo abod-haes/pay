@@ -20,6 +20,12 @@ const getServicesStats = async ({ type, value }) => {
   return data;
 };
 
+const getBookingsByDate = async ({ year, month, date }) => {
+  const params = date ? { date } : { year, month };
+  const { data } = await ApiInstance.get(`${ROUTES.GET}/bookings-by-date`, { params });
+  return data;
+};
+
 const getSummary = async () => {
   const { data } = await ApiInstance.get(`${ROUTES.GET}/summary`);
   return data;
@@ -42,4 +48,5 @@ export const apis = {
   getPatients,
   getBookingsStats,
   getServicesStats,
+  getBookingsByDate,
 };
