@@ -11,10 +11,24 @@ const PRINT_VALUE_TRANSLATIONS = {
   delayed: "مؤجل",
 };
 
+const PRINT_SECTION_TRANSLATIONS = {
+  hair_transplant: "زراعة",
+  eyebrow_transplant: "زراعة",
+  injection: "حقن",
+  hair_care: "عناية الشعر",
+  other: "أخرى",
+};
+
 const translatePrintValue = value => {
   if (value === null || value === undefined || value === "") return "-";
   const stringValue = String(value).trim();
   return PRINT_VALUE_TRANSLATIONS[stringValue] || stringValue;
+};
+
+const translatePrintSection = value => {
+  if (value === null || value === undefined || value === "") return "-";
+  const stringValue = String(value).trim();
+  return PRINT_SECTION_TRANSLATIONS[stringValue] || translatePrintValue(stringValue);
 };
 
 const getValue = value => {
@@ -23,6 +37,14 @@ const getValue = value => {
     return translatePrintValue(value?.name || value?.full_name || value?.title || value?.label || value?.type || "-");
   }
   return translatePrintValue(value);
+};
+
+const getSectionValue = value => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "object") {
+    return translatePrintSection(value?.name || value?.title || value?.label || value?.type || "-");
+  }
+  return translatePrintSection(value);
 };
 
 const formatStatus = status => getValue(status?.name || status?.title || status?.type || status);
@@ -34,7 +56,7 @@ const buildRows = rows =>
       row => `
         <tr>
           <td>${row.label}</td>
-          <td>${getValue(row.value)}</td>
+          <td>${row.isSection ? getSectionValue(row.value) : getValue(row.value)}</td>
         </tr>`
     )
     .join("");
@@ -168,8 +190,8 @@ export const printBookingRow = row => {
     title: "معلومات المريض وتفاصيل الحجز",
     patient: row?.patientx || row,
     details: [
-      { label: "الخدمة", value: row?.service },
-      { label: "القسم", value: row?.department || row?.type },
+      { label: "الخدمة", value: row?.serviceName || row?.service },
+      { label: "القسم", value: row?.department || row?.section || row?.type, isSection: true },
       { label: "التاريخ", value: row?.date },
       { label: "الوقت", value: row?.time },
       { label: "الحالة", value: formatStatus(row?.status) },
