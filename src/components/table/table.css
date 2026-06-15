@@ -1,0 +1,129 @@
+/* Enhanced Table Styles */
+
+.filter-blue {
+  filter: brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg)
+    brightness(104%) contrast(97%);
+}
+
+.table-search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.table-search-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.table-search-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.column-filter-dropdown {
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.filter-button:hover {
+  transform: scale(1.05);
+}
+
+.filter-button.active {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.rtl .column-filter-dropdown {
+  left: auto;
+  right: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .column-filter-dropdown {
+    min-width: 180px;
+  }
+
+  .table-search-container {
+    width: 100%;
+  }
+}
+
+/* Loading State */
+.table-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Empty State */
+.table-empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* Pagination Enhancements */
+.pagination-container {
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Sticky Header Enhancement */
+.table-header-sticky {
+  backdrop-filter: blur(8px);
+  background-color: rgba(249, 249, 249, 0.95);
+}
+
+/* Enhanced sticky header with shadow */
+.sticky-table-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(8px);
+  background-color: rgba(250, 246, 245, 0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Table container with proper scrolling */
+.table-scroll-container {
+  overflow: auto;
+  /* scrollbar-width: thin; */
+}
+
+/* Custom Scrollbar Styling */
+.table-scroll-container::-webkit-scrollbar {
+  height: 6px; /* Horizontal scrollbar height */
+  width: 6px; /* Vertical scrollbar width */
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5); /* Gray-400 with opacity */
+  border-radius: 20px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.8); /* Gray-500 with opacity */
+}
+
+/* Ensure table takes full width in scroll container */
+.full-width-table {
+  width: 100%;
+  min-width: 100%;
+}

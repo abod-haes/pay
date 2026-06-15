@@ -1,0 +1,146 @@
+.sidebar-item {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Parent item hover state */
+.sidebar-item:hover {
+  background-color: #d3d3d3;
+  transform: translateX(2px);
+}
+
+/* Override hover for active items */
+.sidebar-item.active:hover {
+  background: #3b5a92;
+}
+
+.sidebar-item.child.active:hover {
+  /* background: #29b4c3; */
+}
+
+.sidebar-item.parent-active:hover {
+  background: #3b5a92;
+}
+
+/* Parent item active state */
+.sidebar-item.active {
+  background: #3b5a92;
+  color: white;
+}
+
+/* When parent is active, make icon white using CSS filter */
+.sidebar-item.active img {
+  filter: brightness(0) invert(1);
+}
+
+/* Child item styles */
+.sidebar-item.child {
+  margin-right: 20px;
+}
+
+/* Child item hover state */
+.sidebar-item.child:hover {
+  background-color: #d3d3d3;
+}
+
+/* Child item active state */
+.sidebar-item.child.active {
+  color: #29b4c3;
+  background: transparent;
+}
+
+/* When child is active, make its icon white */
+.sidebar-item.child.active img {
+  filter: brightness(0) invert(1);
+}
+
+/* Parent item when child is active - should also be active */
+.sidebar-item.parent-active {
+  background: #3b5a92;
+  color: white;
+}
+
+/* Parent icon when child is active */
+.sidebar-item.parent-active img {
+  filter: brightness(0) invert(1);
+}
+
+.sidebar-item.highlighted {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(74, 144, 226, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 144, 226, 0);
+  }
+}
+
+.sidebar-child-item {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-child-item::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: #cbd5e0;
+  border-radius: 50%;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-child-item:hover::before {
+  background-color: #4a90e2;
+  transform: translateY(-50%) scale(1.5);
+}
+
+.sidebar-child-item.active::before {
+  background-color: #4a90e2;
+  transform: translateY(-50%) scale(1.5);
+}
+
+.expand-icon {
+  transition: transform 0.3s ease-in-out;
+}
+
+.expand-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.logo-container {
+  transition: all 0.3s ease-in-out;
+}
+
+.sidebar-border {
+  background: linear-gradient(180deg, #4a90e2 0%, #357abd 100%);
+}
+
+تحسين الظلال .sidebar-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+}
+
+@media (max-width: 768px) {
+  .sidebar-item {
+    padding: 12px 16px;
+  }
+
+  .sidebar-child-item {
+    padding: 8px 16px;
+    margin-left: 16px;
+  }
+}

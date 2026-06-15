@@ -1,0 +1,339 @@
+@import "tailwindcss";
+@font-face {
+  font-family: "notoku";
+  src: url("/src/assets/fonts/NotoKufiArabic-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Alhurra";
+  src: url("/src/assets/fonts/Alhurra\ Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@theme {
+  --color-primary: #29b4c3;
+  --color-secondary: #3b5a92;
+  --color-accent: #c1c1c1;
+  --color-error: #c3292c;
+  --color-table-header: #faf6f5;
+  --color-gray: #d3d3d3;
+  --font-main: "notoku", sans-serif;
+  --font-title: "Alhurra", sans-serif;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+}
+
+* {
+  /* margin: 0;
+  padding: 0; */
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "notoku", sans-serif;
+  color: #333333;
+  font-weight: 400;
+  background: #f9f9f9;
+}
+
+@layer base {
+  h1,
+  label,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-title;
+  }
+}
+
+/* Hide scrollbar utilities */
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+.scrollbar-default {
+  -ms-overflow-style: auto;
+  /* IE and Edge */
+  scrollbar-width: auto;
+  /* Firefox */
+}
+
+.scrollbar-default::-webkit-scrollbar {
+  display: block;
+  /* Chrome, Safari and Opera */
+}
+
+/* Container الرئيسي */
+
+.my-custom-datetime .rmdp-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(60, 60, 60, 0.15);
+  padding: 10px;
+  font-family: "Inter", "DIN", Arial, sans-serif;
+  min-width: 100px;
+  border: none;
+}
+
+.my-custom-datetime {
+  width: 100%;
+}
+
+.my-custom-datetime .rmdp-calendar {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+.my-custom-datetime .rmdp-weekdays div,
+.my-custom-datetime .rmdp-day span {
+  text-align: center;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.my-custom-datetime .rmdp-day-picker {
+  direction: rtl;
+}
+
+/* أيام الأسبوع */
+
+.my-custom-datetime .rmdp-weekdays div {
+  @apply text-primary!;
+  font-weight: 600 !important;
+  background: none;
+}
+
+.rmdp-week-day {
+  @apply text-primary!;
+  font-weight: 600 !important;
+}
+
+/* اليوم المحدد */
+
+.my-custom-datetime .rmdp-day.rmdp-selected span,
+.my-custom-datetime .rmdp-day.rmdp-selected:hover span {
+  @apply bg-primary!;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+/* hover على أي يوم */
+
+.my-custom-datetime .rmdp-day:hover span {
+  background: #29b4c37e !important;
+  color: #fff !important;
+  cursor: pointer;
+}
+
+/* أيام قديمة أو جديدة */
+
+.my-custom-datetime .rmdp-day.rmdp-outside {
+  color: #ccc !important;
+  background: none;
+}
+
+/* اليوم الحالي */
+
+.my-custom-datetime .rmdp-day.rmdp-today {
+  @apply border-b!;
+  @apply border-primary!;
+}
+
+/* الساعة */
+
+.my-custom-datetime .rmdp-clock {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.my-custom-datetime .rmdp-clock .rmdp-digit {
+  background: #f5faff !important;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.rmdp-shadow {
+  border: 1px solid #ddd;
+}
+
+.my-custom-datetime .rmdp-clock .rmdp-digit:hover {
+  background: #e6f7fb !important;
+}
+
+.my-custom-datetime .rmdp-arrow,
+.my-custom-datetime .rmdp-btn {
+  /* border: solid #944f30 !important; */
+  @apply border-primary!;
+  border-width: 0 2px 2px 0 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: color 0.2s !important;
+}
+
+.rmdp-arrow-container {
+  display: flex;
+  padding-top: 2px;
+  height: 20px;
+  width: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.rmdp-arrow-container:hover {
+  @apply bg-primary!;
+}
+
+.my-custom-datetime .rmdp-arrow:hover,
+.my-custom-datetime .rmdp-btn:hover {
+  background: #29b4c37e !important;
+  color: #fff !important;
+}
+
+.rmdp-header-values span {
+  font-weight: 600;
+}
+
+.ep-arrow {
+  display: none;
+}
+
+.my-custom-datetime .rmdp-header-switch {
+  color: #222 !important;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 4px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.my-custom-datetime .rmdp-header-switch:hover {
+  background: #29b4c37e !important;
+  color: #fff;
+}
+
+.my-custom-datetime-position .rmdp-container {
+  top: auto !important;
+  bottom: 100% !important;
+}
+
+.my-custom-datetime .rmdp-day.rmdp-today {
+  border-bottom: none;
+}
+
+.rmdp-day.rmdp-today span {
+  background: #29b4c37e !important;
+}
+
+.vitals-panel {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  width: 220px;
+  background-color: rgba(31, 31, 31, 0.9);
+  border-radius: 12px;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: none;
+}
+
+.vitals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #292929;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.vitals-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vital-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #222;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.vital-name {
+  font-weight: 500;
+}
+
+.vital-value {
+  font-weight: bold;
+}
+
+.vitals-panel.collapsed {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.vitals-panel.collapsed .vitals-body {
+  display: none;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  /* For Firefox */
+}
+.phone {
+  /* direction: ltr; */
+  unicode-bidi: embed;
+}
