@@ -16,6 +16,7 @@ import Image from "@assets/svgs/file-uploader/image.svg";
 import ApiInstance from "@/constants/api-instance";
 import { handleBackendErrors } from "@/utils/helpers";
 import { API_BASE_URL } from "@/constants/domain";
+import FileMetaInputs from "@/components/shared/fileMetaInputs";
 
 const acceptedTypes = [
   "application/pdf",
@@ -60,6 +61,8 @@ const FileUploader = ({
   const [previewImage, setPreviewImage] = useState(null);
   const [progresses, setProgresses] = useState({});
   const [deleting, setDeleting] = useState({}); // 🔹 نخزن حالة الحذف لكل ملف
+  const [fileName, setFileName] = useState("");
+  const [fileDate, setFileDate] = useState(getToday());
   const inputRef = useRef();
   const { i18n } = useTranslation();
   const isRTL = ["ar", "fa"].includes(i18n.language);
@@ -131,6 +134,23 @@ const FileUploader = ({
     }
   };
 
+  const handleOpenFileDialog = () => {
+    if (disable) return;
+
+    if (!fileName.trim()) {
+      setError("يرجى إدخال اسم الملف");
+      return;
+    }
+
+    if (!fileDate) {
+      setError("يرجى إدخال تاريخ الملف");
+      return;
+    }
+
+    setError("");
+    inputRef.current.click();
+  };
+
   const handleFiles = fileList => {
     const newFiles = Array.from(fileList);
     const validFiles = newFiles.filter(file => acceptedTypes.includes(file.type));
@@ -139,22 +159,20 @@ const FileUploader = ({
       return;
     }
     setError("");
-    const tempFiles = validFiles.map((file, i) => {
-      const defaultDate = getToday();
-      const name = window.prompt("اسم الملف", file.name) || file.name;
-      const date = window.prompt("تاريخ الملف", defaultDate) || defaultDate;
-
-      return {
-        id: `temp-${Date.now()}-${i}`,
-        name,
-        date,
-        type: file.type,
-        localFile: file,
-        uploading: true,
-      };
-    });
+    const metaName = fileName.trim();
+    const metaDate = fileDate;
+    const tempFiles = validFiles.map((file, i) => ({
+      id: `temp-${Date.now()}-${i}`,
+      name: metaName,
+      date: metaDate,
+      type: file.type,
+      localFile: file,
+      uploading: true,
+    }));
     setFiles(prev => [...prev, ...tempFiles]);
     validFiles.forEach((file, i) => uploadFile(file, tempFiles[i].id, tempFiles[i]));
+    setFileName("");
+    setFileDate(getToday());
   };
 
   const onFileChange = e => {
@@ -197,8 +215,18 @@ const FileUploader = ({
         onChange={onFileChange}
         disabled={disable}
       />
+
+      <FileMetaInputs
+        fileName={fileName}
+        setFileName={setFileName}
+        fileDate={fileDate}
+        setFileDate={setFileDate}
+        disabled={disable}
+        className="mb-3"
+      />
+
       <div
-        onClick={() => !disable && inputRef.current.click()}
+        onClick={handleOpenFileDialog}
         className={`border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer ${
           disable ? "opacity-50 cursor-not-allowed" : "hover:border-gray-400"
         }`}
