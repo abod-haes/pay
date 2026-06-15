@@ -24,6 +24,14 @@ const PRINT_SECTION_TRANSLATIONS = {
   other: "أخرى",
 };
 
+const escapeHtml = value =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
 const translatePrintValue = value => {
   if (value === null || value === undefined || value === "") return "-";
   const stringValue = String(value).trim();
@@ -93,13 +101,29 @@ const splitDateTime = (dateValue, fallbackTime) => {
 const buildRows = rows =>
   rows
     .filter(row => row?.value !== undefined)
-    .map(
-      row => `
+    .map(row => {
+      const value = row.isSection ? getSectionValue(row.value) : getValue(row.value);
+
+      return `
+        <div class="info-item">
+          <span class="info-label">${escapeHtml(row.label)}</span>
+          <strong class="info-value">${escapeHtml(value)}</strong>
+        </div>`;
+    })
+    .join("");
+
+const buildDetailsTableRows = rows =>
+  rows
+    .filter(row => row?.value !== undefined)
+    .map(row => {
+      const value = row.isSection ? getSectionValue(row.value) : getValue(row.value);
+
+      return `
         <tr>
-          <td>${row.label}</td>
-          <td>${row.isSection ? getSectionValue(row.value) : getValue(row.value)}</td>
-        </tr>`
-    )
+          <td class="label-cell">${escapeHtml(row.label)}</td>
+          <td>${escapeHtml(value)}</td>
+        </tr>`;
+    })
     .join("");
 
 const buildBookingsRows = bookings => {
@@ -113,12 +137,12 @@ const buildBookingsRows = bookings => {
 
       return `
         <tr>
-          <td>${index + 1}</td>
-          <td>${getValue(booking?.title || booking?.service?.name || booking?.service || booking?.section || booking?.type)}</td>
-          <td>${getValue(dateTime.date)}</td>
-          <td>${getValue(dateTime.time)}</td>
-          <td>${formatStatus(booking?.booking_status || booking?.status)}</td>
-          <td>${getValue(booking?.employee?.full_name || booking?.employee || booking?.doctor?.full_name)}</td>
+          <td class="index-cell">${index + 1}</td>
+          <td>${escapeHtml(getValue(booking?.title || booking?.service?.name || booking?.service || booking?.section || booking?.type))}</td>
+          <td>${escapeHtml(getValue(dateTime.date))}</td>
+          <td>${escapeHtml(getValue(dateTime.time))}</td>
+          <td><span class="status-badge">${escapeHtml(formatStatus(booking?.booking_status || booking?.status))}</span></td>
+          <td>${escapeHtml(getValue(booking?.employee?.full_name || booking?.employee || booking?.doctor?.full_name))}</td>
         </tr>`;
     })
     .join("");
@@ -135,80 +159,350 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
           size: auto;
           margin: 0;
         }
-        * { box-sizing: border-box; }
+
+        * {
+          box-sizing: border-box;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
         html,
         body {
           margin: 0;
           padding: 0;
           background: #ffffff;
         }
+
         body {
           font-family: Arial, Tahoma, sans-serif;
-          color: #111827;
-          padding: 32px;
+          color: #172033;
+          padding: 24px;
           line-height: 1.7;
         }
-        h1 { font-size: 22px; margin: 0 0 20px; color: #111827; }
-        h2 { font-size: 16px; margin: 24px 0 12px; color: #29b4c3; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        th, td { border: 1px solid #e5e7eb; padding: 10px 12px; text-align: right; font-size: 13px; }
-        th { background: #f3f4f6; font-weight: 700; }
-        .info td:first-child { width: 30%; background: #f9fafb; font-weight: 700; }
-        .empty { text-align: center; color: #6b7280; }
-        .print-date { color: #6b7280; font-size: 12px; margin-bottom: 20px; }
+
+        .print-page {
+          width: 100%;
+          min-height: calc(100vh - 48px);
+          border: 1px solid #dbe7ea;
+          border-radius: 18px;
+          overflow: hidden;
+          background: #ffffff;
+        }
+
+        .print-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 24px;
+          padding: 28px 30px;
+          background: linear-gradient(135deg, #ecfbfd 0%, #ffffff 72%);
+          border-bottom: 1px solid #dbe7ea;
+        }
+
+        .brand-block {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .brand-mark {
+          width: 48px;
+          height: 48px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #29b4c3;
+          color: #ffffff;
+          font-weight: 800;
+          font-size: 20px;
+          box-shadow: 0 10px 24px rgba(41, 180, 195, 0.22);
+        }
+
+        .eyebrow {
+          margin: 0 0 4px;
+          color: #29b4c3;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.4px;
+        }
+
+        h1 {
+          font-size: 22px;
+          line-height: 1.35;
+          margin: 0;
+          color: #101827;
+        }
+
+        .print-date-card {
+          min-width: 190px;
+          padding: 12px 14px;
+          border: 1px solid #dbe7ea;
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.88);
+          text-align: right;
+        }
+
+        .print-date-label {
+          display: block;
+          color: #667085;
+          font-size: 11px;
+          margin-bottom: 2px;
+        }
+
+        .print-date-value {
+          display: block;
+          color: #172033;
+          font-weight: 700;
+          font-size: 12px;
+        }
+
+        .content {
+          padding: 26px 30px 30px;
+        }
+
+        .section {
+          margin-bottom: 24px;
+        }
+
+        .section-title {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 0 0 14px;
+          color: #101827;
+          font-size: 16px;
+          font-weight: 800;
+        }
+
+        .section-title::before {
+          content: "";
+          width: 5px;
+          height: 22px;
+          border-radius: 999px;
+          background: #29b4c3;
+        }
+
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .info-item {
+          padding: 12px 14px;
+          border: 1px solid #e4ecef;
+          border-radius: 14px;
+          background: #fbfdfe;
+          min-height: 70px;
+        }
+
+        .info-label {
+          display: block;
+          color: #667085;
+          font-size: 11px;
+          margin-bottom: 4px;
+        }
+
+        .info-value {
+          display: block;
+          color: #101827;
+          font-size: 14px;
+          font-weight: 800;
+          word-break: break-word;
+        }
+
+        .table-wrap {
+          border: 1px solid #dbe7ea;
+          border-radius: 16px;
+          overflow: hidden;
+          background: #ffffff;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        th,
+        td {
+          padding: 11px 12px;
+          text-align: right;
+          font-size: 12.5px;
+          border-bottom: 1px solid #e7eef0;
+          vertical-align: middle;
+        }
+
+        tr:last-child td {
+          border-bottom: 0;
+        }
+
+        th {
+          background: #f2fbfc;
+          color: #344054;
+          font-size: 12px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .label-cell {
+          width: 30%;
+          color: #667085;
+          background: #fbfdfe;
+          font-weight: 800;
+        }
+
+        .index-cell {
+          width: 46px;
+          text-align: center;
+          color: #667085;
+          font-weight: 800;
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 66px;
+          padding: 4px 10px;
+          border-radius: 999px;
+          background: #eefafd;
+          color: #188a96;
+          font-weight: 800;
+          font-size: 11.5px;
+        }
+
+        .empty {
+          padding: 24px 12px;
+          text-align: center;
+          color: #667085;
+          background: #fbfdfe;
+        }
+
+        .print-footer {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          padding-top: 16px;
+          margin-top: 8px;
+          border-top: 1px solid #e7eef0;
+          color: #98a2b3;
+          font-size: 11px;
+        }
+
         @media print {
           html,
           body {
             margin: 0 !important;
             padding: 0 !important;
           }
+
           body {
-            padding: 16px !important;
+            padding: 10px !important;
+          }
+
+          .print-page {
+            min-height: auto;
+            border-radius: 14px;
+          }
+
+          .print-header {
+            padding: 22px 24px;
+          }
+
+          .content {
+            padding: 22px 24px 24px;
+          }
+
+          .section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .table-wrap {
+            break-inside: auto;
+          }
+
+          tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
         }
       </style>
     </head>
     <body>
-      <h1>${title}</h1>
-      <div class="print-date">تاريخ الطباعة: ${new Date().toLocaleString("ar")}</div>
+      <main class="print-page">
+        <header class="print-header">
+          <div class="brand-block">
+            <div class="brand-mark">P</div>
+            <div>
+              <p class="eyebrow">تقرير طبي</p>
+              <h1>${escapeHtml(title)}</h1>
+            </div>
+          </div>
 
-      <h2>معلومات المريض</h2>
-      <table class="info">
-        <tbody>
-          ${buildRows([
-            { label: "الاسم", value: patient?.full_name || patient?.name || patient?.patient },
-            { label: "رقم الهاتف", value: patient?.first_phone_number || patient?.phoneNumber || patient?.phone },
-            { label: "رقم هاتف إضافي", value: patient?.second_phone_number },
-            { label: "الجنس", value: patient?.gender },
-            { label: "العنوان", value: patient?.address },
-          ])}
-        </tbody>
-      </table>
+          <div class="print-date-card">
+            <span class="print-date-label">تاريخ الطباعة</span>
+            <span class="print-date-value">${escapeHtml(new Date().toLocaleString("ar"))}</span>
+          </div>
+        </header>
 
-      ${
-        details?.length
-          ? `<h2>تفاصيل الحجز / العملية</h2><table class="info"><tbody>${buildRows(details)}</tbody></table>`
-          : ""
-      }
+        <section class="content">
+          <div class="section">
+            <h2 class="section-title">معلومات المريض</h2>
+            <div class="info-grid">
+              ${buildRows([
+                { label: "الاسم", value: patient?.full_name || patient?.name || patient?.patient },
+                { label: "رقم الهاتف", value: patient?.first_phone_number || patient?.phoneNumber || patient?.phone },
+                { label: "رقم هاتف إضافي", value: patient?.second_phone_number },
+                { label: "الجنس", value: patient?.gender },
+                { label: "العنوان", value: patient?.address },
+              ])}
+            </div>
+          </div>
 
-      ${
-        bookings?.length
-          ? `<h2>الحجوزات</h2>
-             <table>
-               <thead>
-                 <tr>
-                   <th>#</th>
-                   <th>العنوان</th>
-                   <th>التاريخ</th>
-                   <th>الوقت</th>
-                   <th>الحالة</th>
-                   <th>الموظف / الطبيب</th>
-                 </tr>
-               </thead>
-               <tbody>${buildBookingsRows(bookings)}</tbody>
-             </table>`
-          : ""
-      }
+          ${
+            details?.length
+              ? `<div class="section">
+                  <h2 class="section-title">تفاصيل الحجز / العملية</h2>
+                  <div class="table-wrap">
+                    <table>
+                      <tbody>${buildDetailsTableRows(details)}</tbody>
+                    </table>
+                  </div>
+                </div>`
+              : ""
+          }
+
+          ${
+            bookings?.length
+              ? `<div class="section">
+                  <h2 class="section-title">الحجوزات</h2>
+                  <div class="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>العنوان</th>
+                          <th>التاريخ</th>
+                          <th>الوقت</th>
+                          <th>الحالة</th>
+                          <th>الموظف / الطبيب</th>
+                        </tr>
+                      </thead>
+                      <tbody>${buildBookingsRows(bookings)}</tbody>
+                    </table>
+                  </div>
+                </div>`
+              : ""
+          }
+
+          <footer class="print-footer">
+            <span>تم إنشاء هذا التقرير من النظام</span>
+            <span>Patient Report</span>
+          </footer>
+        </section>
+      </main>
     </body>
   </html>`;
 
