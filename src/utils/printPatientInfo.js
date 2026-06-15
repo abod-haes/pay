@@ -45,9 +45,19 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
   <html lang="ar" dir="rtl">
     <head>
       <meta charset="utf-8" />
-      <title>${title}</title>
+      <title>&#8203;</title>
       <style>
+        @page {
+          size: auto;
+          margin: 0;
+        }
         * { box-sizing: border-box; }
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          background: #ffffff;
+        }
         body {
           font-family: Arial, Tahoma, sans-serif;
           color: #111827;
@@ -62,7 +72,16 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
         .info td:first-child { width: 30%; background: #f9fafb; font-weight: 700; }
         .empty { text-align: center; color: #6b7280; }
         .print-date { color: #6b7280; font-size: 12px; margin-bottom: 20px; }
-        @media print { body { padding: 16px; } }
+        @media print {
+          html,
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          body {
+            padding: 16px !important;
+          }
+        }
       </style>
     </head>
     <body>
@@ -115,8 +134,10 @@ export const printPatientData = ({ title = "معلومات المريض", patien
 
   printWindow.document.write(buildPrintHtml({ title, patient, details, bookings }));
   printWindow.document.close();
+  printWindow.document.title = "\u200B";
   printWindow.focus();
   printWindow.onload = () => {
+    printWindow.document.title = "\u200B";
     printWindow.print();
   };
 };
