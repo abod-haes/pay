@@ -287,31 +287,29 @@ const ActionOperationBooking = () => {
       />
       <div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="flex flex-col lg:flex-row gap-[20px]">
-            <div className="space-y-6 w-full lg:w-[80%] relative">
-              <LoadingSection isLoading={isLoading || isRefetching} otherStyle={"h-full"} />
-              <PatientInformation
-                control={control}
-                watch={watch}
-                errors={errors}
-                setValue={setValue}
-                didInit={didInit}
-                reset={reset}
-                dirtyFields={dirtyFields}
-              />
-              <MedicalInformation control={control} setValue={setValue} watch={watch} />
-              <ProcessData control={control} setValue={setValue} watch={watch} errors={errors} />
-              <DateAndTime
-                control={control}
-                setValue={setValue}
-                watch={watch}
-                dataToReset={data?.data?.data}
-                isSelected={isSelected}
-                setIsSelected={setIsSelected}
-                selectDate={selectDate}
-                setSelectedDate={setSelectedDate}
-              />
-            </div>
+          <div className="relative space-y-6">
+            <LoadingSection isLoading={isLoading || isRefetching} otherStyle={"h-full"} />
+            <PatientInformation
+              control={control}
+              watch={watch}
+              errors={errors}
+              setValue={setValue}
+              didInit={didInit}
+              reset={reset}
+              dirtyFields={dirtyFields}
+            />
+            <MedicalInformation control={control} setValue={setValue} watch={watch} />
+            <ProcessData control={control} setValue={setValue} watch={watch} errors={errors} />
+            <DateAndTime
+              control={control}
+              setValue={setValue}
+              watch={watch}
+              dataToReset={data?.data?.data}
+              isSelected={isSelected}
+              setIsSelected={setIsSelected}
+              selectDate={selectDate}
+              setSelectedDate={setSelectedDate}
+            />
             <SurgeriesArchaive
               control={control}
               files={attachmentsFiles}
