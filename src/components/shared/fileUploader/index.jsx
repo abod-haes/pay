@@ -28,6 +28,8 @@ const acceptedTypes = [
   "application/vnd.ms-excel",
 ];
 
+const getToday = () => new Date().toISOString().split("T")[0];
+
 // helper: return file icon
 const getFileIcon = type => {
   if (type?.includes("pdf")) {
@@ -45,7 +47,15 @@ const getFileIcon = type => {
   return <img src={Image} alt="file" className="w-6 h-6" />;
 };
 
-const FileUploader = ({ maxFiles = 5, files, setFiles, disable, placeholder, removeFile }) => {
+const FileUploader = ({
+  maxFiles = 5,
+  files,
+  setFiles,
+  disable,
+  placeholder,
+  removeFile,
+  onExistingFileDelete,
+}) => {
   const [error, setError] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const [progresses, setProgresses] = useState({});
@@ -54,9 +64,11 @@ const FileUploader = ({ maxFiles = 5, files, setFiles, disable, placeholder, rem
   const { i18n } = useTranslation();
   const isRTL = ["ar", "fa"].includes(i18n.language);
 
-  const uploadFile = async (file, tempId) => {
+  const uploadFile = async (file, tempId, meta = {}) => {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("name", meta.name || file.name);
+    formData.append("date", meta.date || getToday());
 
     try {
       const res = await ApiInstance.post(`${API_BASE_URL}upload-temp-media`, formData, {
@@ -87,9 +99,16 @@ const FileUploader = ({ maxFiles = 5, files, setFiles, disable, placeholder, rem
   };
 
   const deleteFile = async file => {
+    if (onExistingFileDelete && file.media_id && !String(file.id).startsWith("temp-")) {
+      onExistingFileDelete(file);
+      setFiles(prev => prev.filter(f => f.media_id !== file.media_id));
+      return;
+    }
+
     if (!file.media_id) {
       // لو كان ملف لسا ما انرفع
       setFiles(prev => prev.filter(f => f.id !== file.id));
+      removeFile?.(file);
       return;
     }
 
@@ -120,15 +139,22 @@ const FileUploader = ({ maxFiles = 5, files, setFiles, disable, placeholder, rem
       return;
     }
     setError("");
-    const tempFiles = validFiles.map((file, i) => ({
-      id: `temp-${Date.now()}-${i}`,
-      name: file.name,
-      type: file.type,
-      localFile: file,
-      uploading: true,
-    }));
+    const tempFiles = validFiles.map((file, i) => {
+      const defaultDate = getToday();
+      const name = window.prompt("اسم الملف", file.name) || file.name;
+      const date = window.prompt("تاريخ الملف", defaultDate) || defaultDate;
+
+      return {
+        id: `temp-${Date.now()}-${i}`,
+        name,
+        date,
+        type: file.type,
+        localFile: file,
+        uploading: true,
+      };
+    });
     setFiles(prev => [...prev, ...tempFiles]);
-    validFiles.forEach((file, i) => uploadFile(file, tempFiles[i].id));
+    validFiles.forEach((file, i) => uploadFile(file, tempFiles[i].id, tempFiles[i]));
   };
 
   const onFileChange = e => {
@@ -198,7 +224,10 @@ const FileUploader = ({ maxFiles = 5, files, setFiles, disable, placeholder, rem
                   <div className="flex items-center gap-1 h-4 w-4">{getFileIcon(file.type)}</div>
 
                   {/* اسم الملف */}
-                  <span className="flex-1 text-sm text-gray-700 truncate mx-2">{file.name}</span>
+                  <div className="flex flex-1 flex-col truncate mx-2">
+                    <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                    {file.date && <span className="text-[0.65rem] text-gray-500">{file.date}</span>}
+                  </div>
 
                   {/* أزرار */}
                   <div className="flex items-center gap-1">
