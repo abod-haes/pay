@@ -42,11 +42,8 @@ const ActionOperationBooking = () => {
   const [isSelected, setIsSelected] = useState(null);
   const [selectDate, setSelectedDate] = useState(formatDate(new Date(Date.now())));
 
-  const [beforeEyebrowFiles, setBeforeEyebrowFiles] = useState([]);
-  const [afterEyebrowFiles, setAfterEyebrowFiles] = useState([]);
-  const [afterFirstSessionFiles, setAfterFirstSessionFiles] = useState([]);
-  const [afterSecondSessionFiles, setAfterSecondSessionFiles] = useState([]);
-  const [afterThreadOpenFiles, setAfterThreadOpenFiles] = useState([]);
+  const [attachmentsFiles, setAttachmentsFiles] = useState([]);
+  const [deleteAttachments, setDeleteAttachments] = useState([]);
   const [isUserSuperAdmin, setUserSuperAdmin] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   useEffect(() => {
@@ -63,19 +60,25 @@ const ActionOperationBooking = () => {
   const resetFiles = item => {
     const formatFiles = arr =>
       arr?.map(file => ({
-        id: file.id, // id من السيرفر
-        name: file.name, // اسم الملف
-        type: file.mime_type, // نوع الملف
-        url: file.url, // رابط مباشر
-        uploading: false, // لا يزال مرفوعًا
-        media_id: file.id, // نخزن media_id للإرسال لاحقاً
+        id: file.id,
+        name: file.name,
+        date: file.date || file.created_at,
+        type: file.mime_type,
+        url: file.url,
+        uploading: false,
+        media_id: file.id,
       })) || [];
 
-    setBeforeEyebrowFiles(formatFiles(item.before_eyebrow_transplant));
-    setAfterEyebrowFiles(formatFiles(item.after_eyebrow_transplant));
-    setAfterFirstSessionFiles(formatFiles(item.after_first_session));
-    setAfterSecondSessionFiles(formatFiles(item.after_second_session));
-    setAfterThreadOpenFiles(formatFiles(item.after_thread_open));
+    const allAttachments = item?.attachments || [
+      ...(item?.before_eyebrow_transplant || []),
+      ...(item?.after_eyebrow_transplant || []),
+      ...(item?.after_first_session || []),
+      ...(item?.after_second_session || []),
+      ...(item?.after_thread_open || []),
+    ];
+
+    setAttachmentsFiles(formatFiles(allAttachments));
+    setDeleteAttachments([]);
   };
 
   const validationSchema = yup.object().shape({
@@ -190,11 +193,8 @@ const ActionOperationBooking = () => {
         total: Number(data.total) || 0,
         section: "hair_transplant",
         service_id: services?.find(item => item.type === "eyebrow_transplant")?.value,
-        after_thread_open_id: afterThreadOpenFiles.map(f => f.media_id)[0],
-        after_second_session_id: afterSecondSessionFiles.map(f => f.media_id)[0],
-        after_first_session_id: afterFirstSessionFiles.map(f => f.media_id)[0],
-        after_eyebrow_transplant_id: afterEyebrowFiles.map(f => f.media_id)[0],
-        before_eyebrow_transplant_id: beforeEyebrowFiles.map(f => f.media_id)[0],
+        attachments_ids: attachmentsFiles.map(f => f.media_id).filter(Boolean),
+        delete_attachments: deleteAttachments,
       };
       clearErrors();
       if (!isAdd) {
@@ -314,18 +314,9 @@ const ActionOperationBooking = () => {
             </div>
             <SurgeriesArchaive
               control={control}
-              setBeforeEyebrowFiles={setBeforeEyebrowFiles}
-              beforeEyebrowFiles={beforeEyebrowFiles}
-              afterThreadOpenFiles={afterThreadOpenFiles}
-              setAfterThreadOpenFiles={setAfterThreadOpenFiles}
-              afterSecondSessionFiles={afterSecondSessionFiles}
-              setAfterSecondSessionFiles={setAfterSecondSessionFiles}
-              afterFirstSessionFiles={afterFirstSessionFiles}
-              setAfterFirstSessionFiles={setAfterFirstSessionFiles}
-              setAfterEyebrowFiles={setAfterEyebrowFiles}
-              afterEyebrowFiles={afterEyebrowFiles}
-              title1={t("surgeries.before-eyebrow")}
-              title2={t("surgeries.after-eyebrow")}
+              files={attachmentsFiles}
+              setFiles={setAttachmentsFiles}
+              setDeleteAttachments={setDeleteAttachments}
             />
           </div>
           <CustomFlexButtons
