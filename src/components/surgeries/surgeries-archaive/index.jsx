@@ -16,7 +16,7 @@ const SurgeriesArchaive = ({
   const setAttachments = setFiles || setBeforeEyebrowFiles;
 
   return (
-    <div className="flex flex-col gap-[16px] w-[40%]">
+    <div className="flex w-full flex-col gap-[16px]">
       <TitleOfSections title={t("surgeries.surgeries-archaive")} />
       <Card otherStyle={"grid gap-[16px] !py-6 !px-6"}>
         <div className="grid gap-4">
