@@ -4,7 +4,13 @@
 import React, { useMemo, useReducer } from "react";
 import Card from "@/components/card";
 import { Table } from "@/components/table";
-import { decryptId, encryptId, handleBackendErrors } from "@/utils/helpers";
+import {
+  decryptId,
+  encryptId,
+  formatDate,
+  formatTimeToSHow,
+  handleBackendErrors,
+} from "@/utils/helpers";
 import { patientActions, initialValues, patientReducer } from "@/reducers/patient-archive";
 import { useTranslation } from "react-i18next";
 import BorderedButton from "@/components/shared/borderedButton";
@@ -13,16 +19,40 @@ import { useParams, useNavigate } from "react-router-dom";
 import { usePatientsQueries } from "@/apis/patients/query";
 import add from "@assets/svgs/common/arrow-down.svg";
 import useBookingVia from "@/hooks/useBookingia";
+import useBookingSections from "@/hooks/useBookingSection";
 import DeleteModal from "@/components/shared/modals/deleteModal";
 import { showSuccess } from "@/libs/react.toastify";
 import { apis } from "@/apis/patients/api";
 import LoadingSection from "@/components/loadingSection";
-import Booking from "@/pages/booking/reservation-patients";
 import FileUploaderDetail from "@/components/fileDetailsUploader";
+import DateUnderTime from "@/components/dateUnderTime";
+import RenderStatus from "@/components/reservationButton";
 import { PERMISSION_ACTION, PERMISSION_GROUP } from "@/constants/constants";
 import { Can } from "@/components/shared/can/can";
-import { formatDate } from "@/utils/helpers";
 import { printPatientWithBookings } from "@/utils/printPatientInfo";
+
+const splitBookingDateTime = value => {
+  const rawValue = String(value || "");
+
+  if (!rawValue) {
+    return { date: "", time: "" };
+  }
+
+  if (rawValue.includes("T")) {
+    const [datePart, timePart = ""] = rawValue.split("T");
+    return {
+      date: datePart,
+      time: timePart.replace("Z", "").split(".")[0],
+    };
+  }
+
+  const [datePart, timePart = ""] = rawValue.split(" ");
+
+  return {
+    date: datePart,
+    time: timePart.split(".")[0],
+  };
+};
 
 export default function PatientFile() {
   const { t, i18n } = useTranslation();
@@ -86,7 +116,8 @@ export default function PatientFile() {
     { value: "male", label: "ذكر" },
     { value: "female", label: "أنثى" },
   ];
-  const { bookingVia } = useBookingVia();
+  const { bookingVia: bookingMethods } = useBookingVia();
+  const { bookingVia: bookingSections } = useBookingSections();
   const handleShow = row => window.open(row.url, "_blank");
   const handleFile = row => console.log("delet:", row);
   const getTranslatedStatus = status => {
@@ -138,7 +169,7 @@ export default function PatientFile() {
     },
     {
       label: t("delayed.reservation-way"),
-      value: bookingVia?.find(item => item?.value.includes(dataToReset?.booking_via))?.label,
+      value: bookingMethods?.find(item => item?.value.includes(dataToReset?.booking_via))?.label,
     },
     {
       label: t("delayed.reservation-date"),
@@ -173,6 +204,79 @@ export default function PatientFile() {
         date: item.date || item.created_at,
       })) || [],
     [data?.data]
+  );
+
+  const bookingsRowData = useMemo(
+    () =>
+      dataToReset?.bookings?.map((item, index) => {
+        const { date, time } = splitBookingDateTime(item.date);
+
+        return {
+          id: item.id,
+          id_show: index + 1,
+          patient: dataToReset?.full_name,
+          patient_id: dataToReset?.id,
+          patientx: dataToReset,
+          total: item.total,
+          department: item.section,
+          is_approve: item.is_approve,
+          service: item.service?.name || item.service_name || item.title || item.name,
+          employee:
+            item.employee?.full_name ||
+            item.doctor?.full_name ||
+            item.employee_name ||
+            item.doctor_name,
+          type: item?.service?.type || item.type,
+          date,
+          time: formatTimeToSHow(time, i18n),
+          bookedBy:
+            bookingMethods?.find(_item => _item?.value?.includes(item.booking_via))?.label ||
+            item.booking_via,
+          status: item.booking_status || item.status,
+          statueName: item.booking_status?.type || item.status?.type || item.status,
+        };
+      }) || [],
+    [dataToReset?.bookings, dataToReset?.id, dataToReset?.full_name, bookingMethods, i18n]
+  );
+
+  const bookingColumns = useMemo(
+    () => [
+      {
+        accessorKey: "id_show",
+        header: "#",
+        enableColumnFilter: true,
+      },
+      {
+        accessorKey: "patient",
+        header: t("booking.patient"),
+        enableColumnFilter: true,
+      },
+      {
+        accessorKey: "employee",
+        header: t("surgeries.admin-name"),
+      },
+      {
+        accessorKey: "department",
+        header: t("booking.department"),
+        cell: ({ row }) => {
+          const sectionObj = bookingSections?.find(s => s.value === row.original.department);
+          return <p>{sectionObj?.label || row.original.department || "-"}</p>;
+        },
+      },
+      { accessorKey: "service", header: t("booking.service") },
+      {
+        accessorKey: "dateTime",
+        header: t("booking.date-time"),
+        cell: ({ row }) => <DateUnderTime date={row.original.date} time={row.original.time} />,
+      },
+      { accessorKey: "bookedBy", header: t("booking.booked-by") },
+      {
+        accessorKey: "status",
+        header: t("booking.status"),
+        cell: ({ row }) => RenderStatus(row.original.status),
+      },
+    ],
+    [bookingSections, i18n.language, t]
   );
 
   const handelDelete = async () => {
@@ -278,7 +382,28 @@ export default function PatientFile() {
         </div>
       </Card>
       <p className="text-primary font-main text-[1rem] mb-4">{t("patient.reservation")}</p>
-      <Booking patient_id={Number(id)} hideTitle customHeight={400} />
+      <Table
+        data={bookingsRowData || []}
+        columns={bookingColumns}
+        pageSize={bookingsRowData?.length || state.pageSize}
+        pageIndex={0}
+        onPageSizeChange={handlePageSizeChange}
+        onPreviousPage={handlePreviousPage}
+        onNextPage={handleNextPage2}
+        onGotoPage={handleGotoPage}
+        permissionGroup={PERMISSION_GROUP.Booking}
+        hasSearch={false}
+        searchValue=""
+        onSearchChange={() => {}}
+        searchPlaceholder={t("common.searchPlaceholder")}
+        hasColumnFilters={false}
+        isLoading={isLoading}
+        hideFilter
+        hasPagination={false}
+        hasStickyBreadcrumb={true}
+        customHeight={400}
+        showRowActions={() => false}
+      />
       <div className="flex items-center justify-between">
         <p className="text-primary font-main text-[1rem] mb-4">{t("patient.file")}</p>
 
