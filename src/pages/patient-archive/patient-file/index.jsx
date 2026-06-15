@@ -17,11 +17,11 @@ import DeleteModal from "@/components/shared/modals/deleteModal";
 import { showSuccess } from "@/libs/react.toastify";
 import { apis } from "@/apis/patients/api";
 import LoadingSection from "@/components/loadingSection";
-import Booking from "@/pages/booking/reservation-patients";
 import FileUploaderDetail from "@/components/fileDetailsUploader";
 import { PERMISSION_ACTION, PERMISSION_GROUP } from "@/constants/constants";
 import { Can } from "@/components/shared/can/can";
 import { formatDate } from "@/utils/helpers";
+import { printPatientWithBookings } from "@/utils/printPatientInfo";
 
 export default function PatientFile() {
   const { t, i18n } = useTranslation();
@@ -65,20 +65,56 @@ export default function PatientFile() {
         header: t("booking.date-time"),
         enableColumnFilter: true,
         cell: ({ row }) => {
-          const datePart = row.original?.date?.split("T")[0];
-          const timePart = row.original?.date?.split("T")[1];
-          const timeOnly = timePart.split(".")[0];
+          const rawDate = row.original?.date || "";
+          const [datePart, timeWithMs] = String(rawDate).split("T");
+          const timeOnly = timeWithMs?.split(".")?.[0];
 
           return (
             <div className="flex flex-col">
-              <span>{datePart}</span>
-              <span className="text-accent">{timeOnly}</span>
+              <span>{datePart || "-"}</span>
+              {timeOnly && <span className="text-accent">{timeOnly}</span>}
             </div>
           );
         },
       },
     ],
-    []
+    [t]
+  );
+
+  const bookingColumns = useMemo(
+    () => [
+      {
+        accessorKey: "id_show",
+        header: "#",
+        enableColumnFilter: true,
+      },
+      {
+        accessorKey: "title",
+        header: t("booking.service"),
+        enableColumnFilter: true,
+      },
+      {
+        accessorKey: "date",
+        header: t("delayed.date"),
+        enableColumnFilter: true,
+      },
+      {
+        accessorKey: "time",
+        header: t("common.time"),
+        enableColumnFilter: true,
+      },
+      {
+        accessorKey: "status",
+        header: t("booking.status"),
+        enableColumnFilter: true,
+      },
+      {
+        accessorKey: "employee",
+        header: t("surgeries.admin-name"),
+        enableColumnFilter: true,
+      },
+    ],
+    [t]
   );
 
   const genderOptions = [
@@ -169,9 +205,29 @@ export default function PatientFile() {
         id: item.id,
         name: item.name,
         url: item.url,
-        date: item.created_at,
+        date: item.date || item.created_at,
       })) || [],
     [data?.data]
+  );
+
+  const bookingsRowData = useMemo(
+    () =>
+      dataToReset?.bookings?.map((item, index) => {
+        const [date, time] = String(item?.date || "").split(" ");
+        return {
+          id: item.id,
+          id_show: index + 1,
+          title: item?.title || item?.service?.name || item?.service || "-",
+          date: date || item?.booking_date || "-",
+          time: time || item?.time || "-",
+          status: item?.booking_status?.name || item?.booking_status?.type || item?.status?.name || "-",
+          employee: item?.employee?.full_name || item?.doctor?.full_name || "-",
+          patientx: dataToReset,
+          service: item?.service?.name || item?.service || item?.title,
+          total: item?.total,
+        };
+      }) || [],
+    [dataToReset]
   );
 
   const handelDelete = async () => {
@@ -204,6 +260,14 @@ export default function PatientFile() {
         </p>
 
         <div className="flex items-center gap-2">
+          <BorderedButton
+            text="طباعة المريض"
+            border={"border border-primary"}
+            textColor={"text-primary"}
+            onClick={() =>
+              printPatientWithBookings({ patient: dataToReset, bookings: dataToReset?.bookings || [] })
+            }
+          />
           <Can group={PERMISSION_GROUP.Patient} type={PERMISSION_ACTION.delete}>
             <BorderedButton
               text={t("patient.delete")}
@@ -269,7 +333,24 @@ export default function PatientFile() {
         </div>
       </Card>
       <p className="text-primary font-main text-[1rem] mb-4">{t("patient.reservation")}</p>
-      <Booking patient_id={Number(id)} hideTitle customHeight={400} />
+      <Table
+        data={bookingsRowData || []}
+        columns={bookingColumns}
+        pageSize={state.pageSize}
+        pageIndex={state.pageIndex}
+        onPageSizeChange={handlePageSizeChange}
+        onPreviousPage={handlePreviousPage}
+        onNextPage={handleNextPage2}
+        onGotoPage={handleGotoPage}
+        permissionGroup={PERMISSION_GROUP.Booking}
+        hasSearch={false}
+        hasColumnFilters={false}
+        isLoading={isLoading}
+        hideFilter
+        hasPagination={false}
+        customHeight={400}
+        hasStickyBreadcrumb={true}
+      />
       <div className="flex items-center justify-between">
         <p className="text-primary font-main text-[1rem] mb-4">{t("patient.file")}</p>
 
@@ -287,6 +368,7 @@ export default function PatientFile() {
         permissionGroup={PERMISSION_GROUP.Patient}
         hasSearch={true}
         onShow={handleShow}
+        onFile={handleFile}
         searchValue={state.searchValue}
         onSearchChange={val => dispatch({ type: patientActions.searchValue, payload: val })}
         searchPlaceholder={t("common.searchPlaceholder")}
