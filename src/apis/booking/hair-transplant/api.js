@@ -1,6 +1,36 @@
 import ApiInstance from "@/constants/api-instance";
 import { ROUTES } from "./routes";
 
+const legacyAttachmentKeys = [
+  "after_thread_open_id",
+  "after_second_session_id",
+  "after_first_session_id",
+  "after_eyebrow_transplant_id",
+  "before_eyebrow_transplant_id",
+];
+
+const normalizeSurgeryPayload = payload => {
+  const normalizedPayload = { ...payload };
+  const legacyAttachmentIds = legacyAttachmentKeys
+    .map(key => normalizedPayload[key])
+    .filter(Boolean);
+
+  normalizedPayload.attachments_ids = [
+    ...(Array.isArray(normalizedPayload.attachments_ids) ? normalizedPayload.attachments_ids : []),
+    ...legacyAttachmentIds,
+  ].filter(Boolean);
+
+  normalizedPayload.delete_attachments = Array.isArray(normalizedPayload.delete_attachments)
+    ? normalizedPayload.delete_attachments
+    : [];
+
+  legacyAttachmentKeys.forEach(key => {
+    delete normalizedPayload[key];
+  });
+
+  return normalizedPayload;
+};
+
 const getAll = async ({
   per_page,
   page,
@@ -34,12 +64,12 @@ const getOne = async ({ id }) => {
 };
 
 const add = async ({ payload }) => {
-  const { data } = await ApiInstance.post(`${ROUTES.GET}`, payload);
+  const { data } = await ApiInstance.post(`${ROUTES.GET}`, normalizeSurgeryPayload(payload));
   return { data };
 };
 
 const update = async ({ id, payload }) => {
-  const { data } = await ApiInstance.patch(`${ROUTES.GET}/${id}`, payload);
+  const { data } = await ApiInstance.patch(`${ROUTES.GET}/${id}`, normalizeSurgeryPayload(payload));
   return { data };
 };
 const changeOperation = async ({ id, payload }) => {
@@ -69,7 +99,7 @@ const assignDoctor = async ({ id, doctor_id }) => {
 const assignTechnician = async ({ id, technician_id, assistant_id }) => {
   const { data } = await ApiInstance.patch(`${ROUTES.GET}/${id}/assign-technician`, {
     technician_id: technician_id,
-    assistant_id: assistant_id,
+    assistant_id,
   });
   return { data };
 };
