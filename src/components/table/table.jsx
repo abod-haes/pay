@@ -108,10 +108,21 @@ export default function Table({
     printBookingRow(row);
   };
 
-  const renderPrintAction = row => {
-    const canPrint = onPrint || row?.patientx;
+  const canPrintRow = row => (onPrint || row?.patientx) && showRowActions(row);
 
-    if (!canPrint || !showRowActions(row)) return null;
+  const getPrintMenuItem = row => {
+    if (!canPrintRow(row)) return null;
+
+    return {
+      label: "طباعة معلومات المريض",
+      icon: <img src={printer} alt="print" />,
+      onClick: () => handlePrintRow(row),
+      show: true,
+    };
+  };
+
+  const renderPrintAction = row => {
+    if (!canPrintRow(row)) return null;
 
     return (
       <button
@@ -124,6 +135,19 @@ export default function Table({
         <img src={printer} alt="print" className="w-5 h-5 cursor-pointer" />
       </button>
     );
+  };
+
+  const renderExtraActions = row => {
+    const actions = extraActions(row);
+    const printMenuItem = getPrintMenuItem(row);
+
+    if (printMenuItem && React.isValidElement(actions) && Array.isArray(actions.props?.items)) {
+      return React.cloneElement(actions, {
+        items: [printMenuItem, ...actions.props.items],
+      });
+    }
+
+    return actions;
   };
 
   const renderDefaultActions = row => (
@@ -199,14 +223,7 @@ export default function Table({
         header: "",
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            {extraActions ? (
-              <>
-                {renderPrintAction(row.original)}
-                {extraActions(row.original)}
-              </>
-            ) : (
-              renderDefaultActions(row.original)
-            )}
+            {extraActions ? renderExtraActions(row.original) : renderDefaultActions(row.original)}
           </div>
         ),
       },
