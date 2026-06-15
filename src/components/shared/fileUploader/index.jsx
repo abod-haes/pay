@@ -279,23 +279,6 @@ const FileUploader = ({
       <div dir={isRTL ? "rtl" : "ltr"} className="flex flex-col gap-3">
         {hiddenFileInput}
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <FileMetaInputs
-            fileName={fileName}
-            setFileName={setFileName}
-            fileDate={fileDate}
-            setFileDate={setFileDate}
-            disabled={disable}
-          />
-          <BorderedButton
-            text="إضافة ملف"
-            border="border border-primary"
-            textColor="text-primary"
-            onClick={handleOpenFileDialog}
-            disabled={disable}
-          />
-        </div>
-
         <div className="overflow-x-auto rounded-xl border border-[#E5E7EB] bg-white">
           <table className="min-w-full text-right text-[0.75rem]">
             <thead className="bg-[#F9FAFB] text-accent">
@@ -340,6 +323,25 @@ const FileUploader = ({
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="rounded-xl border border-dashed border-[#C9D3DD] bg-[#F9FAFB] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <FileMetaInputs
+              fileName={fileName}
+              setFileName={setFileName}
+              fileDate={fileDate}
+              setFileDate={setFileDate}
+              disabled={disable}
+            />
+            <BorderedButton
+              text="إضافة ملف"
+              border="border border-primary"
+              textColor="text-primary"
+              onClick={handleOpenFileDialog}
+              disabled={disable}
+            />
+          </div>
         </div>
 
         {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
