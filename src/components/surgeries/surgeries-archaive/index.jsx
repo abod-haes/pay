@@ -5,89 +5,35 @@ import Card from "@/components/card";
 
 const SurgeriesArchaive = ({
   control,
+  files,
+  setFiles,
+  setDeleteAttachments,
   setBeforeEyebrowFiles,
   beforeEyebrowFiles,
-  afterThreadOpenFiles,
-  setAfterThreadOpenFiles,
-  afterSecondSessionFiles,
-  setAfterSecondSessionFiles,
-  afterFirstSessionFiles,
-  setAfterFirstSessionFiles,
-  setAfterEyebrowFiles,
-  afterEyebrowFiles,
-  title1,
-  title2,
 }) => {
   const { t } = useTranslation();
+  const attachments = files || beforeEyebrowFiles || [];
+  const setAttachments = setFiles || setBeforeEyebrowFiles;
 
   return (
     <div className="flex flex-col gap-[16px] w-[40%]">
       <TitleOfSections title={t("surgeries.surgeries-archaive")} />
       <Card otherStyle={"grid gap-[16px] !py-6 !px-6"}>
         <div className="grid gap-4">
-          <p className="font-normal text-[0.9rem] leading-[125%]">{title1}</p>
+          <p className="font-normal text-[0.9rem] leading-[125%]">ملفات العملية</p>
           <FileUploader
-            files={beforeEyebrowFiles}
-            setFiles={setBeforeEyebrowFiles}
-            removeFile={file => setBeforeEyebrowFiles(prev => prev.filter(f => f.id !== file.id))}
-            name="before_eyebrow_transplant_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4">
-          <p className="font-normal text-[0.9rem] leading-[125%]">{title2}</p>
-          <FileUploader
-            files={afterEyebrowFiles}
-            setFiles={setAfterEyebrowFiles}
-            removeFile={file => setAfterEyebrowFiles(prev => prev.filter(f => f.id !== file.id))}
-            name="after_eyebrow_transplant_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4">
-          <p className="font-normal text-[0.9rem] leading-[125%]">{t("surgeries.after-opening")}</p>
-          <FileUploader
-            files={afterThreadOpenFiles}
-            setFiles={setAfterThreadOpenFiles}
-            removeFile={file => setAfterThreadOpenFiles(prev => prev.filter(f => f.id !== file.id))}
-            name="after_first_session_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4">
-          <p className="font-normal text-[0.9rem] leading-[125%]">{t("surgeries.after-meso")}</p>
-          <FileUploader
-            files={afterSecondSessionFiles}
-            setFiles={setAfterSecondSessionFiles}
-            removeFile={file =>
-              setAfterSecondSessionFiles(prev => prev.filter(f => f.id !== file.id))
+            files={attachments}
+            setFiles={setAttachments}
+            removeFile={file => setAttachments(prev => prev.filter(f => f.id !== file.id))}
+            onExistingFileDelete={file =>
+              setDeleteAttachments?.(prev =>
+                prev.includes(file.media_id) ? prev : [...prev, file.media_id]
+              )
             }
-            name="after_thread_open_id"
+            name="attachments_ids"
             control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
-          />
-        </div>
-        <div className="grid gap-4">
-          <p className="font-normal text-[0.9rem] leading-[125%]">
-            {t("surgeries.after-second-meso")}
-          </p>
-          <FileUploader
-            files={afterFirstSessionFiles}
-            setFiles={setAfterFirstSessionFiles}
-            removeFile={file =>
-              setAfterFirstSessionFiles(prev => prev.filter(f => f.id !== file.id))
-            }
-            name="after_second_session_id"
-            control={control}
-            placeholder={t("common.upload-image")}
-            maxFiles={1}
+            placeholder="رفع ملف مع الاسم والتاريخ"
+            maxFiles={20}
           />
         </div>
       </Card>
