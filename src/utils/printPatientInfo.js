@@ -9,6 +9,11 @@ const PRINT_VALUE_TRANSLATIONS = {
   cancel: "ملغي",
   done: "منجز",
   delayed: "مؤجل",
+  pending: "انتظار",
+  active: "نشط",
+  booked: "محجوز",
+  male: "ذكر",
+  female: "أنثى",
 };
 
 const PRINT_SECTION_TRANSLATIONS = {
@@ -49,6 +54,42 @@ const getSectionValue = value => {
 
 const formatStatus = status => getValue(status?.name || status?.title || status?.type || status);
 
+const splitDateTime = (dateValue, fallbackTime) => {
+  if (!dateValue) {
+    return {
+      date: "-",
+      time: fallbackTime || "-",
+    };
+  }
+
+  const value = String(dateValue).trim();
+
+  if (value.includes("T")) {
+    const [datePart, rawTimePart] = value.split("T");
+    const timePart = rawTimePart?.replace("Z", "")?.split(".")?.[0];
+
+    return {
+      date: datePart || "-",
+      time: fallbackTime || timePart || "-",
+    };
+  }
+
+  if (value.includes(" ")) {
+    const [datePart, rawTimePart] = value.split(/\s+/);
+    const timePart = rawTimePart?.replace("Z", "")?.split(".")?.[0];
+
+    return {
+      date: datePart || "-",
+      time: fallbackTime || timePart || "-",
+    };
+  }
+
+  return {
+    date: value || "-",
+    time: fallbackTime || "-",
+  };
+};
+
 const buildRows = rows =>
   rows
     .filter(row => row?.value !== undefined)
@@ -68,14 +109,14 @@ const buildBookingsRows = bookings => {
 
   return bookings
     .map((booking, index) => {
-      const dateValue = booking?.date || booking?.created_at || "";
-      const [date, time] = String(dateValue).split(" ");
+      const dateTime = splitDateTime(booking?.date || booking?.booking_date, booking?.time);
+
       return `
         <tr>
           <td>${index + 1}</td>
           <td>${getValue(booking?.title || booking?.service?.name || booking?.service || booking?.section || booking?.type)}</td>
-          <td>${getValue(date || booking?.booking_date)}</td>
-          <td>${getValue(time || booking?.time)}</td>
+          <td>${getValue(dateTime.date)}</td>
+          <td>${getValue(dateTime.time)}</td>
           <td>${formatStatus(booking?.booking_status || booking?.status)}</td>
           <td>${getValue(booking?.employee?.full_name || booking?.employee || booking?.doctor?.full_name)}</td>
         </tr>`;
