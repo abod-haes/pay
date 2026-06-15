@@ -18,10 +18,11 @@ import TableSearch from "./tableSearch";
 
 import eye from "@/assets/svgs/table/e-eye.svg";
 import edit2 from "@/assets/svgs/table/edit2.svg";
-import trash1 from "@/assets/svgs/table/trash.svg";
+import trash1 from "@assets/svgs/table/trash.svg";
 import file from "@assets/svgs/table/document-download.svg";
 import printer from "@/assets/svgs/table/printer.svg";
 import LoadingElement from "@/components/shared/loading";
+import { printBookingRow } from "@/utils/printPatientInfo";
 import "./table.css";
 import Card from "../card";
 import { Can } from "../shared/can/can";
@@ -98,18 +99,36 @@ export default function Table({
     };
   }, [openFilterColumn]);
 
+  const handlePrintRow = row => {
+    if (onPrint) {
+      onPrint(row);
+      return;
+    }
+
+    printBookingRow(row);
+  };
+
+  const renderPrintAction = row => {
+    const canPrint = onPrint || row?.patientx;
+
+    if (!canPrint || !showRowActions(row)) return null;
+
+    return (
+      <button
+        type="button"
+        onClick={e => {
+          e.stopPropagation();
+          handlePrintRow(row);
+        }}
+      >
+        <img src={printer} alt="print" className="w-5 h-5 cursor-pointer" />
+      </button>
+    );
+  };
+
   const renderDefaultActions = row => (
     <>
-      {onPrint && showRowActions(row) && (
-        <button
-          onClick={e => {
-            onPrint(row);
-            e.stopPropagation();
-          }}
-        >
-          <img src={printer} alt="print" className="w-5 h-5 cursor-pointer" />
-        </button>
-      )}
+      {renderPrintAction(row)}
 
       {onEdit && showRowActions(row) && (
         // row.default !== 1 &&
@@ -180,7 +199,14 @@ export default function Table({
         header: "",
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            {extraActions ? extraActions(row.original) : renderDefaultActions(row.original)}
+            {extraActions ? (
+              <>
+                {renderPrintAction(row.original)}
+                {extraActions(row.original)}
+              </>
+            ) : (
+              renderDefaultActions(row.original)
+            )}
           </div>
         ),
       },
