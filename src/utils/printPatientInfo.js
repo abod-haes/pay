@@ -1,10 +1,31 @@
-const getValue = value => {
-  if (value === null || value === undefined || value === "") return "-";
-  if (typeof value === "object") return value?.name || value?.full_name || value?.title || value?.label || "-";
-  return String(value);
+const PRINT_VALUE_TRANSLATIONS = {
+  hair_transplant: "زراعة الشعر",
+  eyebrow_transplant: "زراعة الحواجب",
+  injection: "الحقن",
+  hair_care: "العناية بالشعر",
+  other: "أخرى",
+  wait: "انتظار",
+  approve: "موافق عليه",
+  cancel: "ملغي",
+  done: "منجز",
+  delayed: "مؤجل",
 };
 
-const formatStatus = status => status?.name || status?.title || status?.type || status || "-";
+const translatePrintValue = value => {
+  if (value === null || value === undefined || value === "") return "-";
+  const stringValue = String(value).trim();
+  return PRINT_VALUE_TRANSLATIONS[stringValue] || stringValue;
+};
+
+const getValue = value => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "object") {
+    return translatePrintValue(value?.name || value?.full_name || value?.title || value?.label || value?.type || "-");
+  }
+  return translatePrintValue(value);
+};
+
+const formatStatus = status => getValue(status?.name || status?.title || status?.type || status);
 
 const buildRows = rows =>
   rows
@@ -30,7 +51,7 @@ const buildBookingsRows = bookings => {
       return `
         <tr>
           <td>${index + 1}</td>
-          <td>${getValue(booking?.title || booking?.service?.name || booking?.service || booking?.section)}</td>
+          <td>${getValue(booking?.title || booking?.service?.name || booking?.service || booking?.section || booking?.type)}</td>
           <td>${getValue(date || booking?.booking_date)}</td>
           <td>${getValue(time || booking?.time)}</td>
           <td>${formatStatus(booking?.booking_status || booking?.status)}</td>
