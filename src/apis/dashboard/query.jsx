@@ -49,6 +49,15 @@ const GetServicesStats = ({ type, value }) => {
   return queryResult;
 };
 
+const GetBookingsByDate = ({ year, month, date, enabled = true }) => {
+  const queryResult = useQuery({
+    queryKey: ["get-dashboard-bookings-by-date", year, month, date],
+    queryFn: () => apis.getBookingsByDate({ year, month, date }),
+    enabled,
+  });
+  return queryResult;
+};
+
 export const useDashboardQueries = {
   GetAllSecular,
   GetSummary,
@@ -56,4 +65,5 @@ export const useDashboardQueries = {
   GetProfits,
   GetBookingsStats,
   GetServicesStats,
+  GetBookingsByDate,
 };
