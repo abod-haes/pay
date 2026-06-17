@@ -20,9 +20,17 @@ const getServicesStats = async ({ type, value }) => {
   return data;
 };
 
-const getBookingsByDate = async ({ year, month, date }) => {
-  const params = date ? { date } : { year, month };
-  const { data } = await ApiInstance.get(`${ROUTES.GET}/bookings-by-date`, { params });
+const getEarliestBooking = async ({ year, month }) => {
+  const { data } = await ApiInstance.get(`${ROUTES.GET}/earliest-booking`, {
+    params: { year, month },
+  });
+  return data;
+};
+
+const getBookingsByDate = async ({ date }) => {
+  const { data } = await ApiInstance.get(`${ROUTES.GET}/bookings-by-date`, {
+    params: { date },
+  });
   return data;
 };
 
@@ -48,5 +56,6 @@ export const apis = {
   getPatients,
   getBookingsStats,
   getServicesStats,
+  getEarliestBooking,
   getBookingsByDate,
 };
