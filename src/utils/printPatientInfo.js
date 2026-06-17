@@ -6,6 +6,10 @@ const PRINT_VALUE_TRANSLATIONS = {
   injection: "الحقن",
   hair_care: "العناية بالشعر",
   other: "أخرى",
+  direct: "مباشر",
+  whatsapp: "واتساب",
+  facebook: "فيسبوك",
+  instagram: "إنستغرام",
   wait: "انتظار",
   approve: "موافق عليه",
   cancel: "ملغي",
@@ -88,6 +92,8 @@ const splitDateTime = (dateValue, fallbackTime) => {
   return { date: value || "-", time: fallbackTime || "-" };
 };
 
+const getPrintDateValue = value => splitDateTime(value).date;
+
 const getPrintRowContext = options => {
   if (options?.title || options?.detailsTitle) {
     return {
@@ -104,6 +110,22 @@ const getPrintRowContext = options => {
 
   return { title: "طباعة حجز", detailsTitle: "تفاصيل الحجز" };
 };
+
+const getPatientInfoRows = patient => [
+  { label: "الاسم", value: patient?.full_name || patient?.name || patient?.patient },
+  { label: "رقم الهاتف", value: patient?.first_phone_number || patient?.phoneNumber || patient?.phone },
+  { label: "رقم هاتف إضافي", value: patient?.second_phone_number },
+  { label: "الجنس", value: patient?.gender },
+  { label: "تاريخ الولادة", value: getPrintDateValue(patient?.birth_date) },
+  { label: "المحافظة", value: patient?.state?.name || patient?.state },
+  { label: "المدينة", value: patient?.city?.name || patient?.city },
+  { label: "العنوان", value: patient?.address, isFullWidth: true },
+  { label: "طريقة الحجز", value: patient?.booking_via },
+  { label: "تاريخ التسجيل", value: getPrintDateValue(patient?.register_date || patient?.created_at) },
+  { label: "حالة المريض", value: patient?.status },
+  { label: "الموظف", value: patient?.employee?.full_name || patient?.employee },
+  { label: "ملاحظات", value: patient?.notes, isFullWidth: true },
+];
 
 const buildInfoRows = rows =>
   rows
@@ -133,7 +155,7 @@ const buildDetailsTableRows = rows =>
 
 const buildBookingsRows = bookings => {
   if (!bookings?.length) {
-    return `<tr><td colspan="7" class="empty">لا توجد حجوزات</td></tr>`;
+    return `<tr><td colspan="8" class="empty">لا توجد حجوزات</td></tr>`;
   }
 
   return bookings
@@ -142,10 +164,11 @@ const buildBookingsRows = bookings => {
       return `
         <tr>
           <td class="index-cell">${index + 1}</td>
-          <td>${escapeHtml(getValue(booking?.title || booking?.service?.name || booking?.service || booking?.section || booking?.type))}</td>
+          <td>${escapeHtml(getValue(booking?.service || booking?.service?.name || booking?.serviceName || booking?.title || booking?.name))}</td>
           <td>${escapeHtml(getSectionValue(booking?.department || booking?.section || booking?.type))}</td>
           <td>${escapeHtml(getValue(dateTime.date))}</td>
           <td>${escapeHtml(getValue(dateTime.time))}</td>
+          <td>${escapeHtml(getValue(booking?.bookedBy || booking?.booking_via))}</td>
           <td><span class="status-badge">${escapeHtml(formatStatus(booking?.booking_status || booking?.status))}</span></td>
           <td>${escapeHtml(getValue(booking?.employee?.full_name || booking?.employee || booking?.doctor?.full_name || booking?.doctor))}</td>
         </tr>`;
@@ -269,14 +292,7 @@ const buildPrintHtml = ({
         <section class="content">
           ${buildSection({
             title: "معلومات المريض",
-            children: `<div class="info-grid">${buildInfoRows([
-              { label: "الاسم", value: patient?.full_name || patient?.name || patient?.patient },
-              { label: "رقم الهاتف", value: patient?.first_phone_number || patient?.phoneNumber || patient?.phone },
-              { label: "رقم هاتف إضافي", value: patient?.second_phone_number },
-              { label: "الجنس", value: patient?.gender },
-              { label: "تاريخ الولادة", value: patient?.birth_date },
-              { label: "العنوان", value: patient?.address },
-            ])}</div>`,
+            children: `<div class="info-grid">${buildInfoRows(getPatientInfoRows(patient))}</div>`,
           })}
 
           ${details?.length ? buildSection({
@@ -294,8 +310,8 @@ const buildPrintHtml = ({
             .join("")}
 
           ${bookings?.length ? buildSection({
-            title: "الحجوزات",
-            children: `<div class="table-wrap"><table><thead><tr><th>#</th><th>العنوان</th><th>القسم</th><th>التاريخ</th><th>الوقت</th><th>الحالة</th><th>الموظف / الطبيب</th></tr></thead><tbody>${buildBookingsRows(bookings)}</tbody></table></div>`,
+            title: "كل الحجوزات",
+            children: `<div class="table-wrap"><table><thead><tr><th>#</th><th>الخدمة</th><th>القسم</th><th>التاريخ</th><th>الوقت</th><th>طريقة الحجز</th><th>الحالة</th><th>الموظف / الطبيب</th></tr></thead><tbody>${buildBookingsRows(bookings)}</tbody></table></div>`,
           }) : ""}
 
           ${files?.length ? buildSection({
@@ -353,14 +369,15 @@ export const printBookingRow = (row, options = {}) => {
   });
 };
 
-export const printPatientWithBookings = ({ patient, bookings }) => {
+export const printPatientWithBookings = ({ patient, bookings, files }) => {
   const medical = patient?.medical_information || {};
+  const patientFiles = files || patient?.attachments || [];
 
   printPatientData({
     title: "طباعة إضبارة مريض",
     patient,
     bookings,
-    files: patient?.attachments || [],
+    files: patientFiles,
     extraSections: [
       {
         title: "المعلومات الطبية",
