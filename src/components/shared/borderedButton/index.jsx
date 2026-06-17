@@ -9,6 +9,8 @@ export default function BorderedButton({
   textColor,
   disabled,
 }) {
+  const displayText = text === "طباعة المريض" ? "طباعة إضبارة مريض" : text;
+
   return (
     <button
       className={`bg-white  cursor-pointer  text-[0.75rem] ${otherStyle} ${border} ${textColor} px-[30px] py-[8px] rounded-full h-full`}
@@ -16,7 +18,7 @@ export default function BorderedButton({
       type={type}
       disabled={disabled}
     >
-      {text}
+      {displayText}
     </button>
   );
 }
