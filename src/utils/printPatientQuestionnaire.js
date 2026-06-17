@@ -84,7 +84,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
       <meta charset="utf-8" />
       <title>&#8203;</title>
       <style>
-        @page { size: A4; margin: 0; }
+        @page { size: A4; margin: 8mm; }
         @font-face {
           font-family: "notoku";
           src: url("/src/assets/fonts/NotoKufiArabic-Regular.ttf") format("truetype");
@@ -98,35 +98,39 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           font-style: normal;
         }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        html, body { margin: 0; padding: 0; background: #f9f9f9; }
+        html, body { margin: 0; padding: 0; background: #f6f8fb; }
         body {
           font-family: "notoku", Tahoma, Arial, sans-serif;
           color: #333333;
-          padding: 12px 16px;
+          padding: 10px 12px;
         }
         .page {
-          min-height: calc(100vh - 24px);
+          width: 100%;
+          max-width: 210mm;
+          min-height: calc(100vh - 20px);
+          margin: 0 auto;
           background: #fff;
           border: 1px solid #e6edf2;
           border-radius: 18px;
-          padding: 14px 26px 10px;
+          padding: 16px 28px 12px;
           box-shadow: 0 12px 34px rgba(41, 180, 195, 0.08);
         }
         .header {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
-          gap: 24px;
+          gap: 34px;
+          min-height: 86px;
         }
-        .logo-block { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-        .logo-block img { width: 148px; max-height: 76px; object-fit: contain; display: block; }
-        .logo-block span { color: #3b5a92; font-size: 10px; font-weight: 800; }
-        .top-lines { width: 280px; padding-top: 8px; color: #3b5a92; font-size: 12px; font-weight: 900; }
-        .top-line { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .logo-block { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-top: 1px; }
+        .logo-block img { width: 142px; max-height: 70px; object-fit: contain; display: block; }
+        .logo-block span { color: #3b5a92; font-size: 10px; font-weight: 800; line-height: 1.4; }
+        .top-lines { width: 285px; padding-top: 14px; color: #3b5a92; font-size: 12px; font-weight: 900; }
+        .top-line { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; line-height: 1.4; }
         .top-line::before { content: ""; flex: 1; height: 1px; border-bottom: 1.5px dotted #8ba7bb; }
         .brand-rule {
-          height: 5px;
-          margin: 9px 0 11px;
+          height: 4px;
+          margin: 7px 0 16px;
           border-radius: 999px;
           background: linear-gradient(90deg, #29b4c3, #3b5a92);
         }
@@ -134,49 +138,52 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           position: relative;
           border: 1.5px solid #d7e7ee;
           border-inline-start: 5px solid #29b4c3;
-          border-radius: 16px;
-          padding: 14px 16px 13px;
-          margin-bottom: 10px;
+          border-radius: 17px;
+          padding: 18px 18px 15px;
+          margin-bottom: 13px;
           background: #fff;
         }
         .section.soft { background: #fbfdfe; }
         .section-title {
           position: absolute;
-          top: -12px;
-          right: 18px;
+          top: -13px;
+          right: 20px;
           background: #fff;
           border: 1px solid #d7e7ee;
           border-radius: 999px;
-          padding: 2px 12px;
+          padding: 3px 14px;
           color: #29b4c3;
           font-family: "Alhurra", "notoku", sans-serif;
           font-size: 12px;
           font-weight: 900;
+          line-height: 1.2;
         }
-        .patient-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; }
-        .line-field { display: flex; align-items: end; gap: 8px; min-height: 24px; }
+        .patient-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 22px; }
+        .line-field { display: flex; align-items: end; gap: 9px; min-height: 26px; }
         .line-field.wide { grid-column: span 2; }
-        .line-label { white-space: nowrap; font-size: 11px; font-weight: 900; color: #3b5a92; }
+        .line-label { white-space: nowrap; font-size: 11px; font-weight: 900; color: #3b5a92; line-height: 1.4; }
         .line-label::after { content: " :"; }
         .line-value {
           flex: 1;
-          min-height: 18px;
+          min-height: 19px;
           border-bottom: 1.3px dotted #9aa7b2;
-          font-size: 11.5px;
+          font-size: 11.2px;
           font-weight: 800;
           color: #333333;
-          padding: 0 4px 1px;
+          padding: 0 6px 2px;
+          line-height: 1.45;
         }
-        .options { display: grid; grid-template-columns: repeat(7, max-content); gap: 10px 14px; align-items: center; }
-        .requests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; padding-top: 3px; }
+        .options { display: flex; flex-wrap: wrap; gap: 11px 19px; align-items: center; padding-top: 2px; }
+        .requests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 24px; padding-top: 3px; }
         .option-item {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
+          gap: 7px;
           white-space: nowrap;
           color: #333333;
           font-size: 11px;
           font-weight: 700;
+          line-height: 1.45;
         }
         .check-box {
           display: inline-flex;
@@ -191,19 +198,21 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           font-weight: 900;
           line-height: 1;
           background: #fff;
+          flex: 0 0 auto;
         }
         .check-box.checked { background: rgba(41, 180, 195, 0.12); }
-        .medical-lines { display: grid; gap: 8px; padding-right: 14px; }
-        .text-lines { display: grid; gap: 8px; }
-        .health-list { display: grid; gap: 5px; }
+        .medical-lines { display: grid; gap: 10px; padding-right: 10px; }
+        .text-lines { display: grid; gap: 10px; }
+        .health-list { display: grid; gap: 7px; }
         .health-row {
           display: grid;
-          grid-template-columns: 26px 1fr minmax(120px, 1fr);
+          grid-template-columns: 26px minmax(210px, 1fr) minmax(170px, 1.15fr);
           align-items: end;
-          gap: 8px;
+          gap: 10px;
           font-size: 11px;
           font-weight: 800;
           color: #333333;
+          line-height: 1.45;
         }
         .number-badge {
           display: inline-flex;
@@ -217,11 +226,11 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           font-weight: 900;
           background: #29b4c3;
         }
-        .line-answer { min-height: 17px; border-bottom: 1.3px dotted #9aa7b2; color: #333333; padding: 0 4px; }
+        .line-answer { min-height: 18px; border-bottom: 1.3px dotted #9aa7b2; color: #333333; padding: 0 6px 2px; line-height: 1.45; }
         .footer {
-          margin-top: 7px;
+          margin-top: 10px;
           border-top: 3px solid #29b4c3;
-          padding-top: 6px;
+          padding-top: 7px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -231,7 +240,18 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
         }
         @media print {
           body { padding: 0 !important; background: #fff !important; }
-          .page { min-height: 100vh; border: 0; border-radius: 0; box-shadow: none; }
+          .page {
+            max-width: none;
+            min-height: calc(297mm - 16mm);
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 8mm 9mm 6mm;
+          }
+          .header { min-height: 78px; }
+          .logo-block img { width: 132px; max-height: 66px; }
+          .section { margin-bottom: 10px; padding: 15px 16px 13px; }
+          .patient-grid { gap: 12px 18px; }
         }
       </style>
     </head>
@@ -324,10 +344,10 @@ export const printPatientQuestionnaire = ({ patient, form }) => {
 
   printWindow.document.write(buildQuestionnaireHtml({ patient, form }));
   printWindow.document.close();
-  printWindow.document.title = "\u200B";
+  printWindow.document.title = "​";
   printWindow.focus();
   printWindow.onload = () => {
-    printWindow.document.title = "\u200B";
+    printWindow.document.title = "​";
     printWindow.print();
   };
 };
