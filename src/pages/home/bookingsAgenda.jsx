@@ -6,6 +6,8 @@ import { useDashboardQueries } from "@/apis/dashboard/query";
 
 const pad = value => String(value).padStart(2, "0");
 
+const mergeArrays = (...arrays) => arrays.flatMap(item => (Array.isArray(item) ? item : []));
+
 const getPayloadArray = payload => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;
@@ -14,7 +16,12 @@ const getPayloadArray = payload => {
   if (Array.isArray(payload?.days)) return payload.days;
   if (Array.isArray(payload?.data?.days)) return payload.data.days;
   if (Array.isArray(payload?.bookings)) return payload.bookings;
+  if (Array.isArray(payload?.booking)) return payload.booking;
+  if (Array.isArray(payload?.examination)) return payload.examination;
   if (Array.isArray(payload?.data?.bookings)) return payload.data.bookings;
+  if (Array.isArray(payload?.data?.booking) || Array.isArray(payload?.data?.examination)) {
+    return mergeArrays(payload?.data?.booking, payload?.data?.examination);
+  }
 
   const candidate = payload?.data || payload?.result || payload;
   if (candidate && typeof candidate === "object") {
@@ -32,10 +39,15 @@ const parseBookingDate = value => {
 
   const [datePart = "", timePart = ""] = rawValue.split(" ");
 
-  // API returns dates like: 15/06/2026 08:30
+  // API returns dates like: 15/06/2026 08:30 or 06/12/2026 08:30
   if (datePart.includes("/")) {
-    const [day, month, year] = datePart.split("/").map(Number);
-    if (!day || !month || !year) return null;
+    const [first, second, year] = datePart.split("/").map(Number);
+    if (!first || !second || !year) return null;
+
+    // Backend sometimes sends MM/DD/YYYY and sometimes DD/MM/YYYY.
+    // If first number is greater than 12, it is definitely the day.
+    const day = first > 12 ? first : second > 12 ? second : first;
+    const month = first > 12 ? second : second > 12 ? first : second;
 
     return {
       day,
@@ -99,8 +111,24 @@ const getBookingStatus = booking => {
   return booking?.booking_status?.name || booking?.status?.name || booking?.status || "-";
 };
 
+const getStaffName = booking =>
+  booking?.employee?.full_name ||
+  booking?.doctor?.full_name ||
+  booking?.technician?.full_name ||
+  booking?.assistant?.full_name ||
+  "-";
+
 const getBookingTitle = booking => {
-  return booking?.title || booking?.service?.name || booking?.patient?.full_name || "حجز";
+  const title = String(booking?.title || "").trim();
+  if (title && !title.startsWith("messages.")) return title;
+
+  const serviceName = booking?.service?.name || "حجز";
+  const patientName = booking?.patient?.full_name || booking?.patient_name;
+  const time = getBookingTime(booking);
+
+  return [serviceName, patientName ? `للمريض ${patientName}` : "", time && time !== "-" ? `في ${time}` : ""]
+    .filter(Boolean)
+    .join(" ");
 };
 
 const normalizeMonthBookings = payload => {
@@ -108,15 +136,15 @@ const normalizeMonthBookings = payload => {
 
   return items.reduce((acc, item) => {
     // earliest-booking usually returns days, and every day contains one or more bookings.
-    if (Array.isArray(item?.bookings) || Array.isArray(item?.items) || Array.isArray(item?.data)) {
+    const nestedBookings = mergeArrays(item?.bookings, item?.booking, item?.items, item?.data, item?.examination);
+    if (nestedBookings.length) {
       const dateValue = item?.date || item?.full_date || item?.day_date || item?.day;
       const dayNumber = getDayNumber(item?.day_number || item?.day || item?.date || item?.full_date);
       const parsedDate = parseBookingDate(dateValue);
       const finalDayNumber = Number(dayNumber || parsedDate?.day);
       if (!finalDayNumber) return acc;
 
-      const bookings = item?.bookings || item?.items || item?.data || [];
-      acc[finalDayNumber] = [...(acc[finalDayNumber] || []), ...(Array.isArray(bookings) ? bookings : [])];
+      acc[finalDayNumber] = [...(acc[finalDayNumber] || []), ...nestedBookings];
       return acc;
     }
 
@@ -304,7 +332,7 @@ const BookingsAgenda = () => {
                       <span>المريض: {booking?.patient?.full_name || booking?.patient_name || "-"}</span>
                       <span>الوقت: {getBookingTime(booking)}</span>
                       <span>الخدمة: {booking?.service?.name || "-"}</span>
-                      <span>الموظف: {booking?.employee?.full_name || booking?.doctor?.full_name || "-"}</span>
+                      <span>الموظف: {getStaffName(booking)}</span>
                     </div>
                   </div>
                 ))}
