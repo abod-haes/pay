@@ -149,6 +149,18 @@ const getDayCardTitle = booking => {
   return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || "موعد";
 };
 
+const getCompactBookingDetails = booking => {
+  const service = booking?.service?.name || "موعد";
+  const patient = booking?.patient?.full_name || booking?.patient_name || "";
+  const time = getBookingTime(booking);
+
+  return {
+    service,
+    patient,
+    time: time && time !== "-" ? time : "",
+  };
+};
+
 const normalizeMonthBookings = payload => {
   const items = getPayloadArray(payload);
 
@@ -230,7 +242,7 @@ const BookingsAgenda = () => {
 
   return (
     <Card>
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-main text-[0.95rem] text-[#1F2937]">جدول الأعمال</p>
           <div className="flex items-center gap-3">
@@ -259,62 +271,59 @@ const BookingsAgenda = () => {
             <LoadingElement color="#29b4c3" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {monthDays.map(item => {
               const bookingCount = item.bookings.length;
               const hasBookings = bookingCount > 0;
-              const visibleBookings = item.bookings.slice(0, 2);
+              const firstBooking = item.bookings[0];
+              const bookingDetails = getCompactBookingDetails(firstBooking);
 
               return (
                 <button
                   type="button"
                   key={item.date}
                   onClick={() => setSelectedDay(item)}
-                  className={`group min-h-[118px] rounded-2xl border p-3.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${
+                  className={`group flex min-h-[104px] flex-col rounded-[18px] border p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${
                     hasBookings ? "border-primary/25 bg-[#FBFEFF]" : "border-[#EFEFEF] bg-white"
                   }`}
                 >
-                  <div className="flex h-full flex-col gap-3">
-                    <div className="flex items-center justify-between gap-2 border-b border-[#EDF5F7] pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F2FBFC] text-[1rem] font-bold text-primary">
-                          {item.day}
-                        </span>
-                        <span className="text-[0.72rem] text-[#8A94A6]">{item.displayDate}</span>
-                      </div>
+                  <div className="flex items-start justify-between gap-1">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[1rem] font-bold text-primary">
+                      {item.day}
+                    </span>
 
-                      {hasBookings && (
-                        <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-2 text-[0.78rem] font-bold text-white shadow-sm">
-                          {bookingCount}
-                        </span>
-                      )}
-                    </div>
+                    {hasBookings && (
+                      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-[0.72rem] font-bold text-white shadow-sm">
+                        {bookingCount}
+                      </span>
+                    )}
+                  </div>
 
-                    <div className="flex flex-1 flex-col justify-center gap-2">
-                      {hasBookings ? (
-                        <>
-                          {visibleBookings.map((booking, index) => (
-                            <span
-                              key={booking?.id || index}
-                              title={getDayCardTitle(booking)}
-                              className="line-clamp-1 rounded-xl bg-[#F5F8FA] px-3 py-2 text-[0.72rem] leading-5 text-[#384250]"
-                            >
-                              {getDayCardTitle(booking)}
-                            </span>
-                          ))}
+                  <div className="mt-2 h-px w-full bg-[#EDF5F7]" />
 
-                          {bookingCount > visibleBookings.length && (
-                            <span className="text-[0.68rem] font-medium text-primary">
-                              +{bookingCount - visibleBookings.length} مواعيد أخرى
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="rounded-xl bg-[#F8FAFC] px-3 py-2 text-center text-[0.72rem] text-[#9AA3AF]">
-                          لا توجد مواعيد
+                  <div className="mt-2 flex flex-1 flex-col justify-center rounded-xl bg-[#F8FAFC] px-2.5 py-2">
+                    {hasBookings ? (
+                      <>
+                        <span
+                          title={getDayCardTitle(firstBooking)}
+                          className="line-clamp-1 text-[0.72rem] font-bold leading-5 text-[#273142]"
+                        >
+                          {bookingDetails.service}
                         </span>
-                      )}
-                    </div>
+                        {(bookingDetails.patient || bookingDetails.time) && (
+                          <span className="line-clamp-1 text-[0.65rem] leading-5 text-[#7A8699]">
+                            {[bookingDetails.patient, bookingDetails.time].filter(Boolean).join(" • ")}
+                          </span>
+                        )}
+                        {bookingCount > 1 && (
+                          <span className="mt-1 text-[0.62rem] font-medium text-primary">
+                            +{bookingCount - 1} مواعيد أخرى
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-center text-[0.7rem] text-[#9AA3AF]">فارغ</span>
+                    )}
                   </div>
                 </button>
               );
