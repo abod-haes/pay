@@ -5,6 +5,22 @@ import Portal from "@/components/portal";
 import dots from "@/assets/svgs/common/3 dots.svg";
 import "./dropdownMenu.css";
 
+const getContextualPrintLabel = label => {
+  if (label !== "طباعة معلومات المريض") return label;
+
+  const pathname = window.location.pathname;
+
+  if (pathname.includes("/surgeries/operation-bookings")) {
+    return "طباعة عملية";
+  }
+
+  if (pathname.includes("/booking/reservation-patients")) {
+    return "طباعة حجز";
+  }
+
+  return label;
+};
+
 const DropdownMenu = ({
   items = [],
   className = "",
@@ -159,7 +175,7 @@ const DropdownMenu = ({
                   tabIndex={item.disabled ? -1 : 0}
                 >
                   {item.icon && <span className="dropdown-menu-item-icon">{item.icon}</span>}
-                  <span className="dropdown-menu-item-text">{item.label}</span>
+                  <span className="dropdown-menu-item-text">{getContextualPrintLabel(item.label)}</span>
                 </div>
               )
           )
