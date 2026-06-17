@@ -6,6 +6,12 @@ import { useDashboardQueries } from "@/apis/dashboard/query";
 
 const pad = value => String(value).padStart(2, "0");
 
+const toArray = value => {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object") return [value];
+  return [];
+};
+
 const mergeArrays = (...arrays) => arrays.flatMap(item => (Array.isArray(item) ? item : []));
 
 const getPayloadArray = payload => {
@@ -26,8 +32,8 @@ const getPayloadArray = payload => {
   const candidate = payload?.data || payload?.result || payload;
   if (candidate && typeof candidate === "object") {
     return Object.entries(candidate)
-      .filter(([, value]) => Array.isArray(value) || typeof value === "object")
-      .map(([key, value]) => ({ day: key, ...(Array.isArray(value) ? { bookings: value } : value) }));
+      .filter(([, value]) => value && typeof value === "object")
+      .map(([key, value]) => ({ day: key, ...value }));
   }
 
   return [];
@@ -123,6 +129,14 @@ const isGenericBookingTitle = title => {
   return !value || value === "حجز" || value === "موعد" || value.startsWith("messages.");
 };
 
+const getAgendaItemType = item => {
+  if (item?.agendaType) return item.agendaType;
+  if (item?.type === "examination" || item?.examination_id) return "examination";
+  return "booking";
+};
+
+const getAgendaItemLabel = item => (getAgendaItemType(item) === "examination" ? "فحص" : "حجز");
+
 const getBookingTitle = booking => {
   const title = String(booking?.title || "").trim();
   if (title && !title.startsWith("messages.")) return title;
@@ -130,8 +144,9 @@ const getBookingTitle = booking => {
   const serviceName = booking?.service?.name;
   const patientName = booking?.patient?.full_name || booking?.patient_name;
   const time = getBookingTime(booking);
+  const fallbackLabel = getAgendaItemLabel(booking);
 
-  return [serviceName || "موعد", patientName ? `للمريض ${patientName}` : "", time && time !== "-" ? `في ${time}` : ""]
+  return [serviceName || fallbackLabel, patientName ? `للمريض ${patientName}` : "", time && time !== "-" ? `في ${time}` : ""]
     .filter(Boolean)
     .join(" ");
 };
@@ -146,11 +161,11 @@ const getDayCardTitle = booking => {
   const patientName = booking?.patient?.full_name || booking?.patient_name;
   const time = getBookingTime(booking);
 
-  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || "موعد";
+  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || getAgendaItemLabel(booking);
 };
 
 const getCompactBookingDetails = booking => {
-  const service = booking?.service?.name || "موعد";
+  const service = booking?.service?.name || getAgendaItemLabel(booking);
   const patient = booking?.patient?.full_name || booking?.patient_name || "";
   const time = getBookingTime(booking);
 
@@ -165,23 +180,34 @@ const normalizeMonthBookings = payload => {
   const items = getPayloadArray(payload);
 
   return items.reduce((acc, item) => {
-    // earliest-booking usually returns days, and every day contains one or more bookings.
-    const nestedBookings = mergeArrays(item?.bookings, item?.booking, item?.items, item?.data, item?.examination);
-    if (nestedBookings.length) {
-      const dateValue = item?.date || item?.full_date || item?.day_date || item?.day;
-      const dayNumber = getDayNumber(item?.day_number || item?.day || item?.date || item?.full_date);
-      const parsedDate = parseBookingDate(dateValue);
-      const finalDayNumber = Number(dayNumber || parsedDate?.day);
-      if (!finalDayNumber) return acc;
+    const parsedDate = parseBookingDate(item?.date || item?.full_date || item?.day_date);
+    const dayNumber = Number(item?.day_number || parsedDate?.day || getDayNumber(item?.day));
+    if (!dayNumber) return acc;
 
-      acc[finalDayNumber] = [...(acc[finalDayNumber] || []), ...nestedBookings];
+    // earliest-booking returns this shape:
+    // { date: "2026-06-01", booking: { id, title }, examination: null }
+    const earliestBookings = toArray(item?.booking).map(booking => ({
+      ...booking,
+      date: booking?.date || item?.date,
+      agendaType: "booking",
+    }));
+    const earliestExaminations = toArray(item?.examination).map(examination => ({
+      ...examination,
+      date: examination?.date || item?.date,
+      agendaType: "examination",
+    }));
+    const earliestItems = [...earliestBookings, ...earliestExaminations];
+
+    if (earliestItems.length) {
+      acc[dayNumber] = [...(acc[dayNumber] || []), ...earliestItems];
       return acc;
     }
 
-    // Fallback if backend returns flat bookings array with date: "15/06/2026 08:30".
-    const parsedDate = getBookingDateMeta(item);
-    const dayNumber = Number(item?.day_number || parsedDate?.day || getDayNumber(item?.day));
-    if (!dayNumber) return acc;
+    const nestedBookings = mergeArrays(item?.bookings, item?.items, item?.data);
+    if (nestedBookings.length) {
+      acc[dayNumber] = [...(acc[dayNumber] || []), ...nestedBookings];
+      return acc;
+    }
 
     acc[dayNumber] = [...(acc[dayNumber] || []), item];
     return acc;
@@ -203,22 +229,28 @@ const BookingsAgenda = () => {
     enabled: Boolean(selectedDay?.apiDate),
   });
 
-  const daysInMonth = new Date(year, month, 0).getDate();
   const monthBookings = useMemo(() => normalizeMonthBookings(data), [data]);
   const selectedDayBookings = useMemo(() => normalizeDayBookings(selectedDayData), [selectedDayData]);
 
-  const monthDays = Array.from({ length: daysInMonth }, (_, index) => {
-    const day = index + 1;
-    const bookings = monthBookings[day] || [];
+  const monthDays = useMemo(
+    () =>
+      Object.entries(monthBookings)
+        .map(([dayKey, bookings]) => {
+          const day = Number(dayKey);
+          const parsedDate = parseBookingDate(bookings?.[0]?.date);
 
-    return {
-      day,
-      date: `${year}-${pad(month)}-${pad(day)}`,
-      apiDate: `${pad(day)}/${pad(month)}/${year}`,
-      displayDate: `${pad(day)}/${pad(month)}/${year}`,
-      bookings,
-    };
-  });
+          return {
+            day,
+            date: parsedDate?.isoDate || `${year}-${pad(month)}-${pad(day)}`,
+            apiDate: parsedDate?.apiDate || `${pad(day)}/${pad(month)}/${year}`,
+            displayDate: parsedDate?.displayDate || `${pad(day)}/${pad(month)}/${year}`,
+            bookings,
+          };
+        })
+        .filter(item => item.day && item.bookings?.length)
+        .sort((first, second) => first.day - second.day),
+    [monthBookings, month, year]
+  );
 
   const handlePreviousMonth = () => {
     setSelectedDay(null);
@@ -270,11 +302,10 @@ const BookingsAgenda = () => {
           <div className="flex h-[260px] items-center justify-center">
             <LoadingElement color="#29b4c3" />
           </div>
-        ) : (
+        ) : monthDays.length ? (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {monthDays.map(item => {
               const bookingCount = item.bookings.length;
-              const hasBookings = bookingCount > 0;
               const firstBooking = item.bookings[0];
               const bookingDetails = getCompactBookingDetails(firstBooking);
 
@@ -283,51 +314,45 @@ const BookingsAgenda = () => {
                   type="button"
                   key={item.date}
                   onClick={() => setSelectedDay(item)}
-                  className={`group flex min-h-[104px] flex-col rounded-[18px] border p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${
-                    hasBookings ? "border-primary/25 bg-[#FBFEFF]" : "border-[#EFEFEF] bg-white"
-                  }`}
+                  className="group flex min-h-[92px] flex-col rounded-[18px] border border-primary/25 bg-[#FBFEFF] p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                 >
                   <div className="flex items-start justify-between gap-1">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[1rem] font-bold text-primary">
                       {item.day}
                     </span>
 
-                    {hasBookings && (
-                      <span className="rounded-full bg-primary/10 px-2 py-1 text-[0.58rem] font-medium text-primary">
-                        موعد
-                      </span>
-                    )}
+                    <span className="rounded-full bg-primary/10 px-2 py-1 text-[0.58rem] font-medium text-primary">
+                      {getAgendaItemLabel(firstBooking)}
+                    </span>
                   </div>
 
                   <div className="mt-2 h-px w-full bg-[#EDF5F7]" />
 
                   <div className="mt-2 flex flex-1 flex-col justify-center rounded-xl bg-[#F8FAFC] px-2.5 py-2">
-                    {hasBookings ? (
-                      <>
-                        <span
-                          title={getDayCardTitle(firstBooking)}
-                          className="line-clamp-1 text-[0.72rem] font-bold leading-5 text-[#273142]"
-                        >
-                          {bookingDetails.service}
-                        </span>
-                        {(bookingDetails.patient || bookingDetails.time) && (
-                          <span className="line-clamp-1 text-[0.65rem] leading-5 text-[#7A8699]">
-                            {[bookingDetails.patient, bookingDetails.time].filter(Boolean).join(" • ")}
-                          </span>
-                        )}
-                        {bookingCount > 1 && (
-                          <span className="mt-1 text-[0.62rem] font-medium text-primary">
-                            +{bookingCount - 1} مواعيد أخرى
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-center text-[0.7rem] text-[#9AA3AF]">فارغ</span>
+                    <span
+                      title={getDayCardTitle(firstBooking)}
+                      className="line-clamp-1 text-[0.72rem] font-bold leading-5 text-[#273142]"
+                    >
+                      {bookingDetails.service}
+                    </span>
+                    {(bookingDetails.patient || bookingDetails.time) && (
+                      <span className="line-clamp-1 text-[0.65rem] leading-5 text-[#7A8699]">
+                        {[bookingDetails.patient, bookingDetails.time].filter(Boolean).join(" • ")}
+                      </span>
+                    )}
+                    {bookingCount > 1 && (
+                      <span className="mt-1 text-[0.62rem] font-medium text-primary">
+                        +{bookingCount - 1} مواعيد أخرى
+                      </span>
                     )}
                   </div>
                 </button>
               );
             })}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-[#DDE7EA] py-10 text-center text-[0.8rem] text-[#7A8699]">
+            لا توجد مواعيد لهذا الشهر
           </div>
         )}
       </div>
