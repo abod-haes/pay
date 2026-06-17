@@ -6,6 +6,73 @@ import { useDashboardQueries } from "@/apis/dashboard/query";
 
 const pad = value => String(value).padStart(2, "0");
 
+const agendaTexts = {
+  ar: {
+    title: "جدول الأعمال",
+    previous: "السابق",
+    next: "التالي",
+    noMonthAppointments: "لا توجد مواعيد لهذا الشهر",
+    dayBookingsTitle: "حجوزات يوم {{date}}",
+    close: "إغلاق",
+    noDayBookings: "لا توجد حجوزات في هذا اليوم",
+    booking: "حجز",
+    examination: "فحص",
+    appointment: "موعد",
+    examinationCard: "معاينة",
+    otherAppointments: "مواعيد أخرى",
+    patient: "المريض",
+    time: "الوقت",
+    service: "الخدمة",
+    employee: "الموظف",
+    forPatient: "للمريض",
+    atTime: "في",
+  },
+  en: {
+    title: "Agenda",
+    previous: "Previous",
+    next: "Next",
+    noMonthAppointments: "No appointments this month",
+    dayBookingsTitle: "Bookings for {{date}}",
+    close: "Close",
+    noDayBookings: "No bookings on this day",
+    booking: "Booking",
+    examination: "Examination",
+    appointment: "Appointment",
+    examinationCard: "Examination",
+    otherAppointments: "other appointments",
+    patient: "Patient",
+    time: "Time",
+    service: "Service",
+    employee: "Employee",
+    forPatient: "for patient",
+    atTime: "at",
+  },
+  fa: {
+    title: "برنامه کاری",
+    previous: "قبلی",
+    next: "بعدی",
+    noMonthAppointments: "در این ماه هیچ نوبتی وجود ندارد",
+    dayBookingsTitle: "رزروهای روز {{date}}",
+    close: "بستن",
+    noDayBookings: "در این روز رزروی وجود ندارد",
+    booking: "رزرو",
+    examination: "معاینه",
+    appointment: "نوبت",
+    examinationCard: "معاینه",
+    otherAppointments: "نوبت دیگر",
+    patient: "بیمار",
+    time: "زمان",
+    service: "خدمت",
+    employee: "کارمند",
+    forPatient: "برای بیمار",
+    atTime: "در ساعت",
+  },
+};
+
+const getAgendaTexts = language => agendaTexts[language] || agendaTexts.ar;
+const formatMessage = (template, values = {}) =>
+  Object.entries(values).reduce((text, [key, value]) => text.replace(`{{${key}}}`, value), template);
+
 const toArray = value => {
   if (Array.isArray(value)) return value;
   if (value && typeof value === "object") return [value];
@@ -135,38 +202,44 @@ const getAgendaItemType = item => {
   return "booking";
 };
 
-const getAgendaItemLabel = item => (getAgendaItemType(item) === "examination" ? "فحص" : "حجز");
-const getAgendaCardLabel = item => (getAgendaItemType(item) === "examination" ? "معاينة" : "موعد");
+const getAgendaItemLabel = (item, texts) =>
+  getAgendaItemType(item) === "examination" ? texts.examination : texts.booking;
+const getAgendaCardLabel = (item, texts) =>
+  getAgendaItemType(item) === "examination" ? texts.examinationCard : texts.appointment;
 
-const getBookingTitle = booking => {
+const getBookingTitle = (booking, texts) => {
   const title = String(booking?.title || "").trim();
   if (title && !title.startsWith("messages.")) return title;
 
   const serviceName = booking?.service?.name;
   const patientName = booking?.patient?.full_name || booking?.patient_name;
   const time = getBookingTime(booking);
-  const fallbackLabel = getAgendaItemLabel(booking);
+  const fallbackLabel = getAgendaItemLabel(booking, texts);
 
-  return [serviceName || fallbackLabel, patientName ? `للمريض ${patientName}` : "", time && time !== "-" ? `في ${time}` : ""]
+  return [
+    serviceName || fallbackLabel,
+    patientName ? `${texts.forPatient} ${patientName}` : "",
+    time && time !== "-" ? `${texts.atTime} ${time}` : "",
+  ]
     .filter(Boolean)
     .join(" ");
 };
 
-const getDayCardTitle = booking => {
+const getDayCardTitle = (booking, texts) => {
   if (!booking) return "";
 
-  const title = getBookingTitle(booking);
+  const title = getBookingTitle(booking, texts);
   if (!isGenericBookingTitle(title)) return title;
 
   const serviceName = booking?.service?.name;
   const patientName = booking?.patient?.full_name || booking?.patient_name;
   const time = getBookingTime(booking);
 
-  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || getAgendaCardLabel(booking);
+  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || getAgendaCardLabel(booking, texts);
 };
 
-const getCompactBookingDetails = booking => {
-  const service = booking?.service?.name || getAgendaCardLabel(booking);
+const getCompactBookingDetails = (booking, texts) => {
+  const service = booking?.service?.name || getAgendaCardLabel(booking, texts);
   const patient = booking?.patient?.full_name || booking?.patient_name || "";
   const time = getBookingTime(booking);
 
@@ -218,7 +291,8 @@ const normalizeMonthBookings = payload => {
 const normalizeDayBookings = payload => getPayloadArray(payload);
 
 const BookingsAgenda = () => {
-  const { t } = useTranslation();
+  const { i18n } = useTranslation();
+  const texts = getAgendaTexts(i18n.language);
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -277,14 +351,14 @@ const BookingsAgenda = () => {
     <Card>
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-main text-[0.95rem] text-[#1F2937]">جدول الأعمال</p>
+          <p className="font-main text-[0.95rem] text-[#1F2937]">{texts.title}</p>
           <div className="flex items-center gap-3">
             <button
               type="button"
               className="rounded-full border border-primary px-5 py-1.5 text-[0.75rem] text-primary transition hover:bg-primary hover:text-white"
               onClick={handlePreviousMonth}
             >
-              السابق
+              {texts.previous}
             </button>
             <p className="min-w-[92px] text-center font-main text-[0.9rem] text-[#384250]">
               {pad(month)} / {year}
@@ -294,7 +368,7 @@ const BookingsAgenda = () => {
               className="rounded-full border border-primary px-5 py-1.5 text-[0.75rem] text-primary transition hover:bg-primary hover:text-white"
               onClick={handleNextMonth}
             >
-              التالي
+              {texts.next}
             </button>
           </div>
         </div>
@@ -308,7 +382,7 @@ const BookingsAgenda = () => {
             {monthDays.map(item => {
               const bookingCount = item.bookings.length;
               const firstBooking = item.bookings[0];
-              const bookingDetails = getCompactBookingDetails(firstBooking);
+              const bookingDetails = getCompactBookingDetails(firstBooking, texts);
 
               return (
                 <button
@@ -332,7 +406,7 @@ const BookingsAgenda = () => {
 
                   <div className="mt-2 flex flex-1 flex-col justify-center rounded-xl bg-[#F8FAFC] px-2.5 py-2">
                     <span
-                      title={getDayCardTitle(firstBooking)}
+                      title={getDayCardTitle(firstBooking, texts)}
                       className="line-clamp-1 text-[0.74rem] font-bold leading-5 text-[#273142]"
                     >
                       {bookingDetails.service}
@@ -343,7 +417,7 @@ const BookingsAgenda = () => {
                       </span>
                     )}
                     {bookingCount > 1 && (
-                      <span className="mt-1 text-[0.62rem] font-medium text-primary">مواعيد أخرى</span>
+                      <span className="mt-1 text-[0.62rem] font-medium text-primary">{texts.otherAppointments}</span>
                     )}
                   </div>
                 </button>
@@ -352,7 +426,7 @@ const BookingsAgenda = () => {
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[#DDE7EA] py-10 text-center text-[0.8rem] text-[#7A8699]">
-            لا توجد مواعيد لهذا الشهر
+            {texts.noMonthAppointments}
           </div>
         )}
       </div>
@@ -361,13 +435,15 @@ const BookingsAgenda = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <p className="font-main text-[1rem] text-primary">حجوزات يوم {selectedDay.displayDate}</p>
+              <p className="font-main text-[1rem] text-primary">
+                {formatMessage(texts.dayBookingsTitle, { date: selectedDay.displayDate })}
+              </p>
               <button
                 type="button"
                 onClick={() => setSelectedDay(null)}
                 className="rounded-full border border-[#E5E7EB] px-4 py-1 text-[0.75rem]"
               >
-                {t("common.cancel2") || "إغلاق"}
+                {texts.close}
               </button>
             </div>
 
@@ -383,22 +459,22 @@ const BookingsAgenda = () => {
                     className="rounded-xl border border-[#EFEFEF] p-4 text-[0.8rem]"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                      <p className="font-bold text-[#333]">{getBookingTitle(booking)}</p>
+                      <p className="font-bold text-[#333]">{getBookingTitle(booking, texts)}</p>
                       <span className="rounded-full bg-[#FFF8E1] px-3 py-1 text-[0.7rem] text-[#8A6D00]">
                         {getBookingStatus(booking)}
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-1 gap-2 text-[#6B7280] md:grid-cols-2">
-                      <span>المريض: {booking?.patient?.full_name || booking?.patient_name || "-"}</span>
-                      <span>الوقت: {getBookingTime(booking)}</span>
-                      <span>الخدمة: {booking?.service?.name || "-"}</span>
-                      <span>الموظف: {getStaffName(booking)}</span>
+                      <span>{texts.patient}: {booking?.patient?.full_name || booking?.patient_name || "-"}</span>
+                      <span>{texts.time}: {getBookingTime(booking)}</span>
+                      <span>{texts.service}: {booking?.service?.name || "-"}</span>
+                      <span>{texts.employee}: {getStaffName(booking)}</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="py-10 text-center text-[#6B7280]">لا توجد حجوزات في هذا اليوم</p>
+              <p className="py-10 text-center text-[#6B7280]">{texts.noDayBookings}</p>
             )}
           </div>
         </div>
