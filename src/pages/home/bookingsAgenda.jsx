@@ -15,6 +15,14 @@ const getPayloadArray = payload => {
   if (Array.isArray(payload?.data?.days)) return payload.data.days;
   if (Array.isArray(payload?.bookings)) return payload.bookings;
   if (Array.isArray(payload?.data?.bookings)) return payload.data.bookings;
+
+  const candidate = payload?.data || payload?.result || payload;
+  if (candidate && typeof candidate === "object") {
+    return Object.entries(candidate)
+      .filter(([, value]) => Array.isArray(value) || typeof value === "object")
+      .map(([key, value]) => ({ day: key, ...(Array.isArray(value) ? { bookings: value } : value) }));
+  }
+
   return [];
 };
 
@@ -63,6 +71,23 @@ const parseBookingDate = value => {
   return null;
 };
 
+const getDayNumber = value => {
+  if (value === null || value === undefined) return null;
+
+  if (typeof value === "number") return value;
+
+  const rawValue = String(value).trim();
+  if (!rawValue) return null;
+
+  const parsedDate = parseBookingDate(rawValue);
+  if (parsedDate?.day) return parsedDate.day;
+
+  const numericValue = Number(rawValue);
+  if (Number.isFinite(numericValue)) return numericValue;
+
+  return null;
+};
+
 const getBookingDateMeta = booking => parseBookingDate(booking?.date || booking?.day || booking?.full_date);
 
 const getBookingTime = booking => {
@@ -82,21 +107,22 @@ const normalizeMonthBookings = payload => {
   const items = getPayloadArray(payload);
 
   return items.reduce((acc, item) => {
-    // Some API shapes may already return days with inner bookings.
+    // earliest-booking usually returns days, and every day contains one or more bookings.
     if (Array.isArray(item?.bookings) || Array.isArray(item?.items) || Array.isArray(item?.data)) {
-      const dateValue = item?.date || item?.day || item?.full_date;
+      const dateValue = item?.date || item?.full_date || item?.day_date || item?.day;
+      const dayNumber = getDayNumber(item?.day_number || item?.day || item?.date || item?.full_date);
       const parsedDate = parseBookingDate(dateValue);
-      const dayNumber = Number(item?.day_number || parsedDate?.day || item?.day);
-      if (!dayNumber) return acc;
+      const finalDayNumber = Number(dayNumber || parsedDate?.day);
+      if (!finalDayNumber) return acc;
 
       const bookings = item?.bookings || item?.items || item?.data || [];
-      acc[dayNumber] = Array.isArray(bookings) ? bookings : [];
+      acc[finalDayNumber] = [...(acc[finalDayNumber] || []), ...(Array.isArray(bookings) ? bookings : [])];
       return acc;
     }
 
-    // Current API returns a flat bookings array with date: "15/06/2026 08:30".
+    // Fallback if backend returns flat bookings array with date: "15/06/2026 08:30".
     const parsedDate = getBookingDateMeta(item);
-    const dayNumber = Number(item?.day_number || parsedDate?.day || item?.day);
+    const dayNumber = Number(item?.day_number || parsedDate?.day || getDayNumber(item?.day));
     if (!dayNumber) return acc;
 
     acc[dayNumber] = [...(acc[dayNumber] || []), item];
@@ -113,7 +139,7 @@ const BookingsAgenda = () => {
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const { data, isLoading } = useDashboardQueries.GetBookingsByDate({ year, month });
+  const { data, isLoading } = useDashboardQueries.GetEarliestBooking({ year, month });
   const { data: selectedDayData, isLoading: isDayLoading } = useDashboardQueries.GetBookingsByDate({
     date: selectedDay?.apiDate,
     enabled: Boolean(selectedDay?.apiDate),
@@ -121,13 +147,7 @@ const BookingsAgenda = () => {
 
   const daysInMonth = new Date(year, month, 0).getDate();
   const monthBookings = useMemo(() => normalizeMonthBookings(data), [data]);
-  const fetchedSelectedDayBookings = useMemo(
-    () => normalizeDayBookings(selectedDayData),
-    [selectedDayData]
-  );
-  const selectedDayBookings = fetchedSelectedDayBookings.length
-    ? fetchedSelectedDayBookings
-    : selectedDay?.bookings || [];
+  const selectedDayBookings = useMemo(() => normalizeDayBookings(selectedDayData), [selectedDayData]);
 
   const monthDays = Array.from({ length: daysInMonth }, (_, index) => {
     const day = index + 1;
@@ -166,11 +186,11 @@ const BookingsAgenda = () => {
     <Card>
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[0.875rem] font-main">جدول الأعمال</p>
+          <p className="font-main text-[0.875rem]">جدول الأعمال</p>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="rounded-full border border-primary px-4 py-1 text-primary text-[0.75rem]"
+              className="rounded-full border border-primary px-4 py-1 text-[0.75rem] text-primary"
               onClick={handlePreviousMonth}
             >
               السابق
@@ -180,7 +200,7 @@ const BookingsAgenda = () => {
             </p>
             <button
               type="button"
-              className="rounded-full border border-primary px-4 py-1 text-primary text-[0.75rem]"
+              className="rounded-full border border-primary px-4 py-1 text-[0.75rem] text-primary"
               onClick={handleNextMonth}
             >
               التالي
@@ -202,7 +222,7 @@ const BookingsAgenda = () => {
                 className="min-h-[118px] rounded-xl border border-[#EFEFEF] bg-white p-3 text-start transition hover:border-primary hover:shadow-sm"
               >
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-primary font-bold text-[0.9rem]">{item.day}</span>
+                  <span className="text-[0.9rem] font-bold text-primary">{item.day}</span>
                   <span className="rounded-full bg-[#F2FBFC] px-2 py-0.5 text-[0.65rem] text-primary">
                     {item.bookings.length} حجز
                   </span>
@@ -241,12 +261,12 @@ const BookingsAgenda = () => {
               </button>
             </div>
 
-            {isDayLoading && !selectedDayBookings.length ? (
+            {isDayLoading ? (
               <div className="flex h-[180px] items-center justify-center">
                 <LoadingElement color="#29b4c3" />
               </div>
             ) : selectedDayBookings.length ? (
-              <div className="max-h-[420px] overflow-y-auto flex flex-col gap-3">
+              <div className="flex max-h-[420px] flex-col gap-3 overflow-y-auto">
                 {selectedDayBookings.map((booking, index) => (
                   <div
                     key={booking?.id || index}
