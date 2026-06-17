@@ -5,6 +5,7 @@ import ApiInstance from "@/constants/api-instance";
 import { useTranslation } from "react-i18next";
 import LoadingElement from "../shared/loading";
 import FileMetaInputs from "@/components/shared/fileMetaInputs";
+import uploadIcon from "@/assets/svgs/file-uploader/document-upload.svg";
 
 const getToday = () => new Date().toISOString().split("T")[0];
 
@@ -115,23 +116,34 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
 
   return (
     <>
-      <BorderedButton
-        type="button"
-        text={loading ? <LoadingElement size={15} color="#000" /> : t("patient.add-file")}
-        border={"border border-primary"}
-        textColor={"text-primary"}
-        onClick={openDialog}
-        disabled={loading}
-      />
+      <div className="flex justify-start">
+        <BorderedButton
+          type="button"
+          text={loading ? <LoadingElement size={15} color="#000" /> : "إضافة ملف"}
+          border="border border-primary"
+          textColor="text-primary"
+          otherStyle="min-w-[150px] !px-7 !py-2.5 transition hover:bg-primary hover:!text-white"
+          onClick={openDialog}
+          disabled={loading}
+        />
+      </div>
 
       {isDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-[520px] rounded-2xl bg-white p-5 shadow-xl" dir="rtl">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="font-main text-[1rem] text-[#333]">إضافة ملف</h3>
+          <div
+            className="w-full max-w-[540px] rounded-[24px] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
+            dir="rtl"
+          >
+            <div className="mb-5 flex items-start justify-between gap-3 border-b border-[#EEF2F6] pb-4">
+              <div>
+                <h3 className="font-main text-[1.05rem] text-[#2F3747]">إضافة ملف جديد</h3>
+                <p className="mt-1 text-[0.72rem] text-[#9AA3AF]">
+                  اختر الملف وأدخل الاسم والتاريخ قبل الإضافة
+                </p>
+              </div>
               <button
                 type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#E5E7EB] text-accent"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E7EB] text-accent transition hover:bg-[#F7FAFC]"
                 onClick={closeDialog}
               >
                 ×
@@ -147,7 +159,7 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
                 disabled={loading}
               />
 
-              <div className="rounded-xl border border-dashed border-[#C9D3DD] bg-[#F9FAFB] p-4 text-center">
+              <div className="rounded-[18px] border border-dashed border-[#C9D3DD] bg-[#F8FAFC] p-5 text-center transition hover:border-primary/60">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -157,11 +169,14 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
                 />
                 <button
                   type="button"
-                  className="rounded-full border border-primary px-6 py-2 text-[0.75rem] text-primary"
+                  className="inline-flex flex-col items-center justify-center gap-2"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={loading}
                 >
-                  اختيار ملف
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+                    <img src={uploadIcon} alt="رفع ملف" className="h-6 w-6 opacity-70" />
+                  </span>
+                  <span className="font-main text-[0.82rem] text-[#2F3747]">اختيار ملف</span>
                 </button>
                 <p className="mt-2 text-[0.75rem] text-accent">
                   {selectedFile?.name || "لم يتم اختيار ملف"}
@@ -171,7 +186,7 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
               <div className="mt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-[#E5E7EB] px-6 py-2 text-[0.75rem] text-accent"
+                  className="rounded-full border border-[#D5DCE5] px-7 py-2.5 text-[0.78rem] text-accent transition hover:bg-[#F7FAFC]"
                   onClick={closeDialog}
                   disabled={loading}
                 >
@@ -179,11 +194,11 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-primary px-6 py-2 text-[0.75rem] font-bold text-white disabled:bg-gray-300"
+                  className="rounded-full bg-primary px-8 py-2.5 text-[0.78rem] font-bold text-white shadow-sm transition hover:bg-primary/90 disabled:bg-gray-300"
                   onClick={handleUpload}
                   disabled={loading}
                 >
-                  {loading ? <LoadingElement size={15} color="#fff" /> : "إضافة"}
+                  {loading ? <LoadingElement size={15} color="#fff" /> : "إضافة الملف"}
                 </button>
               </div>
             </div>
