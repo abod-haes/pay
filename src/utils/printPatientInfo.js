@@ -88,6 +88,23 @@ const splitDateTime = (dateValue, fallbackTime) => {
   return { date: value || "-", time: fallbackTime || "-" };
 };
 
+const getPrintRowContext = options => {
+  if (options?.title || options?.detailsTitle) {
+    return {
+      title: options.title || "طباعة حجز",
+      detailsTitle: options.detailsTitle || "تفاصيل الحجز",
+    };
+  }
+
+  const pathname = window.location.pathname;
+
+  if (pathname.includes("/surgeries/operation-bookings")) {
+    return { title: "طباعة عملية", detailsTitle: "تفاصيل العملية" };
+  }
+
+  return { title: "طباعة حجز", detailsTitle: "تفاصيل الحجز" };
+};
+
 const buildInfoRows = rows =>
   rows
     .filter(row => row?.value !== undefined)
@@ -155,10 +172,10 @@ const buildFilesRows = files => {
     .join("");
 };
 
-const buildSection = ({ title, className = "", children }) => {
+const buildSection = ({ title, children }) => {
   if (!children) return "";
   return `
-    <div class="section ${className}">
+    <div class="section">
       <h2 class="section-title">${escapeHtml(title)}</h2>
       ${children}
     </div>`;
@@ -318,9 +335,11 @@ export const printPatientData = ({
 };
 
 export const printBookingRow = (row, options = {}) => {
+  const printContext = getPrintRowContext(options);
+
   printPatientData({
-    title: options.title || "طباعة حجز",
-    detailsTitle: options.detailsTitle || "تفاصيل الحجز",
+    title: printContext.title,
+    detailsTitle: printContext.detailsTitle,
     patient: row?.patientx || row,
     details: [
       { label: "الخدمة", value: row?.serviceName || row?.service },
