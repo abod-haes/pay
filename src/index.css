@@ -337,3 +337,26 @@ input[type="number"] {
   /* direction: ltr; */
   unicode-bidi: embed;
 }
+
+/* Questionnaire modal sizing fix */
+.max-h-\[92vh\] {
+  display: flex !important;
+  height: calc(100vh - 28px) !important;
+  max-height: calc(100vh - 28px) !important;
+  flex-direction: column !important;
+}
+
+.max-h-\[92vh\] > .relative.overflow-hidden {
+  flex: 0 0 auto !important;
+}
+
+.max-h-\[92vh\] > .max-h-\[calc\(92vh-210px\)\] {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+
+.max-h-\[92vh\] > .border-t {
+  flex: 0 0 auto !important;
+}
