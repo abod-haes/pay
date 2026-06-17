@@ -1,3 +1,5 @@
+import logo from "@assets/svgs/common/logo.svg";
+
 const PRINT_VALUE_TRANSLATIONS = {
   hair_transplant: "زراعة الشعر",
   eyebrow_transplant: "زراعة الحواجب",
@@ -156,7 +158,7 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
       <title>&#8203;</title>
       <style>
         @page {
-          size: auto;
+          size: A4;
           margin: 0;
         }
 
@@ -175,146 +177,198 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
 
         body {
           font-family: Arial, Tahoma, sans-serif;
-          color: #172033;
-          padding: 24px;
-          line-height: 1.7;
+          color: #22152f;
+          padding: 16px;
+          line-height: 1.65;
         }
 
         .print-page {
           width: 100%;
-          min-height: calc(100vh - 48px);
-          border: 1px solid #dbe7ea;
-          border-radius: 18px;
+          min-height: calc(100vh - 32px);
+          border: 1px solid #ead7f5;
+          border-radius: 8px;
           overflow: hidden;
           background: #ffffff;
         }
 
-        .print-header {
+        .clinic-header {
+          padding: 20px 28px 12px;
+          background: #ffffff;
+        }
+
+        .header-top {
           display: flex;
-          justify-content: space-between;
           align-items: flex-start;
+          justify-content: space-between;
           gap: 24px;
-          padding: 28px 30px;
-          background: linear-gradient(135deg, #ecfbfd 0%, #ffffff 72%);
-          border-bottom: 1px solid #dbe7ea;
         }
 
-        .brand-block {
+        .clinic-logo {
           display: flex;
-          align-items: center;
-          gap: 14px;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 3px;
+          min-width: 180px;
         }
 
-        .brand-mark {
-          width: 48px;
-          height: 48px;
-          border-radius: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #29b4c3;
-          color: #ffffff;
-          font-weight: 800;
-          font-size: 20px;
-          box-shadow: 0 10px 24px rgba(41, 180, 195, 0.22);
+        .clinic-logo img {
+          max-width: 150px;
+          max-height: 72px;
+          object-fit: contain;
+          display: block;
         }
 
-        .eyebrow {
-          margin: 0 0 4px;
-          color: #29b4c3;
-          font-size: 12px;
+        .clinic-subtitle {
+          color: #7d2db2;
+          font-size: 10.5px;
           font-weight: 700;
-          letter-spacing: 0.4px;
-        }
-
-        h1 {
-          font-size: 22px;
-          line-height: 1.35;
           margin: 0;
-          color: #101827;
         }
 
-        .print-date-card {
-          min-width: 190px;
-          padding: 12px 14px;
-          border: 1px solid #dbe7ea;
-          border-radius: 14px;
-          background: rgba(255, 255, 255, 0.88);
-          text-align: right;
+        .clinic-lines {
+          flex: 1;
+          max-width: 360px;
+          color: #2a2350;
+          font-size: 13px;
+          font-weight: 800;
+          padding-top: 8px;
+          direction: rtl;
         }
 
-        .print-date-label {
-          display: block;
-          color: #667085;
+        .clinic-line {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .clinic-line span {
+          white-space: nowrap;
+        }
+
+        .clinic-line::before {
+          content: "";
+          flex: 1;
+          height: 1px;
+          border-bottom: 1px dotted #7b7b91;
+          opacity: 0.9;
+        }
+
+        .purple-rule {
+          height: 5px;
+          margin-top: 10px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #7b1fc1 0%, #9a35d7 55%, #7b1fc1 100%);
+        }
+
+        .report-title-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 14px 28px 0;
+        }
+
+        .report-title {
+          margin: 0;
+          color: #7b1fc1;
+          font-size: 18px;
+          font-weight: 900;
+        }
+
+        .print-date-pill {
+          border: 1px solid #e2caef;
+          border-radius: 999px;
+          padding: 6px 12px;
+          color: #4b3b5f;
+          background: #fbf7fe;
           font-size: 11px;
-          margin-bottom: 2px;
-        }
-
-        .print-date-value {
-          display: block;
-          color: #172033;
           font-weight: 700;
-          font-size: 12px;
         }
 
         .content {
-          padding: 26px 30px 30px;
+          padding: 18px 28px 16px;
         }
 
         .section {
-          margin-bottom: 24px;
+          margin-bottom: 14px;
+          border: 1.5px solid #d7c3e8;
+          border-radius: 12px;
+          padding: 14px;
+          background: #ffffff;
+        }
+
+        .section.patient-section {
+          border-color: #8d35c9;
+        }
+
+        .section.details-section {
+          border-color: #f0b655;
+        }
+
+        .section.bookings-section {
+          border-color: #3f9bff;
         }
 
         .section-title {
           display: flex;
           align-items: center;
-          gap: 10px;
-          margin: 0 0 14px;
-          color: #101827;
-          font-size: 16px;
-          font-weight: 800;
+          justify-content: flex-start;
+          gap: 8px;
+          margin: 0 0 12px;
+          color: #7b1fc1;
+          font-size: 14px;
+          font-weight: 900;
         }
 
         .section-title::before {
           content: "";
-          width: 5px;
-          height: 22px;
-          border-radius: 999px;
-          background: #29b4c3;
+          width: 10px;
+          height: 10px;
+          border: 2px solid currentColor;
+          border-radius: 3px;
+          background: #ffffff;
         }
 
         .info-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 12px;
+          gap: 10px 14px;
         }
 
         .info-item {
-          padding: 12px 14px;
-          border: 1px solid #e4ecef;
-          border-radius: 14px;
-          background: #fbfdfe;
-          min-height: 70px;
+          display: grid;
+          grid-template-columns: 96px 1fr;
+          gap: 8px;
+          align-items: end;
+          min-height: 34px;
         }
 
         .info-label {
-          display: block;
-          color: #667085;
-          font-size: 11px;
-          margin-bottom: 4px;
+          color: #261f45;
+          font-size: 12px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .info-label::after {
+          content: " :";
         }
 
         .info-value {
           display: block;
-          color: #101827;
-          font-size: 14px;
+          min-height: 24px;
+          color: #15192f;
+          font-size: 13px;
           font-weight: 800;
+          border-bottom: 1px dotted #7b7b91;
+          padding-bottom: 2px;
           word-break: break-word;
         }
 
         .table-wrap {
-          border: 1px solid #dbe7ea;
-          border-radius: 16px;
+          border: 1px solid #eadff1;
+          border-radius: 10px;
           overflow: hidden;
           background: #ffffff;
         }
@@ -326,10 +380,10 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
 
         th,
         td {
-          padding: 11px 12px;
+          padding: 9px 10px;
           text-align: right;
-          font-size: 12.5px;
-          border-bottom: 1px solid #e7eef0;
+          font-size: 12px;
+          border-bottom: 1px solid #eee4f4;
           vertical-align: middle;
         }
 
@@ -338,25 +392,25 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
         }
 
         th {
-          background: #f2fbfc;
-          color: #344054;
-          font-size: 12px;
-          font-weight: 800;
+          background: #fbf6fe;
+          color: #5d287d;
+          font-size: 11.5px;
+          font-weight: 900;
           white-space: nowrap;
         }
 
         .label-cell {
           width: 30%;
-          color: #667085;
-          background: #fbfdfe;
-          font-weight: 800;
+          color: #261f45;
+          background: #fffaf3;
+          font-weight: 900;
         }
 
         .index-cell {
           width: 46px;
           text-align: center;
-          color: #667085;
-          font-weight: 800;
+          color: #7b1fc1;
+          font-weight: 900;
         }
 
         .status-badge {
@@ -366,28 +420,50 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
           min-width: 66px;
           padding: 4px 10px;
           border-radius: 999px;
-          background: #eefafd;
-          color: #188a96;
-          font-weight: 800;
-          font-size: 11.5px;
+          background: #f5ebff;
+          color: #7b1fc1;
+          font-weight: 900;
+          font-size: 11px;
         }
 
         .empty {
-          padding: 24px 12px;
+          padding: 22px 12px;
           text-align: center;
-          color: #667085;
-          background: #fbfdfe;
+          color: #6f6480;
+          background: #fbf7fe;
         }
 
-        .print-footer {
+        .clinic-footer {
+          padding: 0 28px 18px;
+        }
+
+        .footer-rule {
+          height: 3px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #7b1fc1 0%, #9a35d7 55%, #7b1fc1 100%);
+          margin-bottom: 8px;
+        }
+
+        .footer-content {
           display: flex;
+          align-items: center;
           justify-content: space-between;
           gap: 16px;
-          padding-top: 16px;
-          margin-top: 8px;
-          border-top: 1px solid #e7eef0;
-          color: #98a2b3;
+          color: #7b1fc1;
           font-size: 11px;
+          font-weight: 800;
+        }
+
+        .footer-logo {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .footer-logo img {
+          width: 54px;
+          height: 26px;
+          object-fit: contain;
         }
 
         @media print {
@@ -398,20 +474,23 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
           }
 
           body {
-            padding: 10px !important;
+            padding: 8px !important;
           }
 
           .print-page {
-            min-height: auto;
-            border-radius: 14px;
+            min-height: calc(100vh - 16px);
+            border-radius: 6px;
           }
 
-          .print-header {
-            padding: 22px 24px;
+          .clinic-header {
+            padding: 16px 22px 10px;
           }
 
-          .content {
-            padding: 22px 24px 24px;
+          .report-title-row,
+          .content,
+          .clinic-footer {
+            padding-left: 22px;
+            padding-right: 22px;
           }
 
           .section {
@@ -432,23 +511,28 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
     </head>
     <body>
       <main class="print-page">
-        <header class="print-header">
-          <div class="brand-block">
-            <div class="brand-mark">P</div>
-            <div>
-              <p class="eyebrow">تقرير طبي</p>
-              <h1>${escapeHtml(title)}</h1>
+        <header class="clinic-header">
+          <div class="header-top">
+            <div class="clinic-logo">
+              <img src="${logo}" alt="Paydar" />
+              <p class="clinic-subtitle">عيادة التخصصي لزراعة الشعر</p>
+            </div>
+
+            <div class="clinic-lines">
+              <div class="clinic-line"><span>التاريخ</span></div>
+              <div class="clinic-line"><span>الرقم</span></div>
             </div>
           </div>
-
-          <div class="print-date-card">
-            <span class="print-date-label">تاريخ الطباعة</span>
-            <span class="print-date-value">${escapeHtml(new Date().toLocaleString("ar"))}</span>
-          </div>
+          <div class="purple-rule"></div>
         </header>
 
+        <div class="report-title-row">
+          <h1 class="report-title">${escapeHtml(title)}</h1>
+          <div class="print-date-pill">تاريخ الطباعة: ${escapeHtml(new Date().toLocaleString("ar"))}</div>
+        </div>
+
         <section class="content">
-          <div class="section">
+          <div class="section patient-section">
             <h2 class="section-title">معلومات المريض</h2>
             <div class="info-grid">
               ${buildRows([
@@ -463,7 +547,7 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
 
           ${
             details?.length
-              ? `<div class="section">
+              ? `<div class="section details-section">
                   <h2 class="section-title">تفاصيل الحجز / العملية</h2>
                   <div class="table-wrap">
                     <table>
@@ -476,7 +560,7 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
 
           ${
             bookings?.length
-              ? `<div class="section">
+              ? `<div class="section bookings-section">
                   <h2 class="section-title">الحجوزات</h2>
                   <div class="table-wrap">
                     <table>
@@ -496,12 +580,18 @@ const buildPrintHtml = ({ title, patient, details = [], bookings = [] }) => `
                 </div>`
               : ""
           }
-
-          <footer class="print-footer">
-            <span>تم إنشاء هذا التقرير من النظام</span>
-            <span>Patient Report</span>
-          </footer>
         </section>
+
+        <footer class="clinic-footer">
+          <div class="footer-rule"></div>
+          <div class="footer-content">
+            <span>تم إنشاء هذا التقرير من نظام Paydar</span>
+            <div class="footer-logo">
+              <span>Paydar Clinic</span>
+              <img src="${logo}" alt="Paydar" />
+            </div>
+          </div>
+        </footer>
       </main>
     </body>
   </html>`;
