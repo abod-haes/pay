@@ -136,6 +136,7 @@ const getAgendaItemType = item => {
 };
 
 const getAgendaItemLabel = item => (getAgendaItemType(item) === "examination" ? "فحص" : "حجز");
+const getAgendaCardLabel = item => (getAgendaItemType(item) === "examination" ? "معاينة" : "موعد");
 
 const getBookingTitle = booking => {
   const title = String(booking?.title || "").trim();
@@ -161,11 +162,11 @@ const getDayCardTitle = booking => {
   const patientName = booking?.patient?.full_name || booking?.patient_name;
   const time = getBookingTime(booking);
 
-  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || getAgendaItemLabel(booking);
+  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || getAgendaCardLabel(booking);
 };
 
 const getCompactBookingDetails = booking => {
-  const service = booking?.service?.name || getAgendaItemLabel(booking);
+  const service = booking?.service?.name || getAgendaCardLabel(booking);
   const patient = booking?.patient?.full_name || booking?.patient_name || "";
   const time = getBookingTime(booking);
 
@@ -314,16 +315,17 @@ const BookingsAgenda = () => {
                   type="button"
                   key={item.date}
                   onClick={() => setSelectedDay(item)}
-                  className="group flex min-h-[92px] flex-col rounded-[18px] border border-primary/25 bg-[#FBFEFF] p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                  className="group flex min-h-[90px] flex-col rounded-[18px] border border-primary/25 bg-[#FBFEFF] p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                 >
-                  <div className="flex items-start justify-between gap-1">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[1rem] font-bold text-primary">
                       {item.day}
                     </span>
-
-                    <span className="rounded-full bg-primary/10 px-2 py-1 text-[0.58rem] font-medium text-primary">
-                      {getAgendaItemLabel(firstBooking)}
-                    </span>
+                    {bookingCount > 1 && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[0.62rem] font-bold text-primary">
+                        +{bookingCount - 1}
+                      </span>
+                    )}
                   </div>
 
                   <div className="mt-2 h-px w-full bg-[#EDF5F7]" />
@@ -331,7 +333,7 @@ const BookingsAgenda = () => {
                   <div className="mt-2 flex flex-1 flex-col justify-center rounded-xl bg-[#F8FAFC] px-2.5 py-2">
                     <span
                       title={getDayCardTitle(firstBooking)}
-                      className="line-clamp-1 text-[0.72rem] font-bold leading-5 text-[#273142]"
+                      className="line-clamp-1 text-[0.74rem] font-bold leading-5 text-[#273142]"
                     >
                       {bookingDetails.service}
                     </span>
@@ -341,9 +343,7 @@ const BookingsAgenda = () => {
                       </span>
                     )}
                     {bookingCount > 1 && (
-                      <span className="mt-1 text-[0.62rem] font-medium text-primary">
-                        +{bookingCount - 1} مواعيد أخرى
-                      </span>
+                      <span className="mt-1 text-[0.62rem] font-medium text-primary">مواعيد أخرى</span>
                     )}
                   </div>
                 </button>
