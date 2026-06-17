@@ -117,7 +117,10 @@ const reminderTexts = {
   },
 };
 
-const getReminderTexts = language => reminderTexts[language] || reminderTexts.ar;
+const getReminderTexts = language => {
+  const baseLanguage = String(language || "ar").split("-")[0];
+  return reminderTexts[baseLanguage] || reminderTexts.ar;
+};
 
 export default function ReminderSettings() {
   const location = useLocation();
@@ -211,7 +214,6 @@ export default function ReminderSettings() {
                 <div>
                   <h3 className="font-main text-[0.92rem] text-[#233047]">{field.title}</h3>
                   <p className="mt-2 text-[0.78rem] leading-6 text-accent">{field.description}</p>
-                  <p className="mt-1 text-[0.72rem] text-primary">{fieldName}</p>
                 </div>
 
                 <Input
