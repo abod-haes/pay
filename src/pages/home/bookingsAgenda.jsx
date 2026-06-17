@@ -293,8 +293,8 @@ const BookingsAgenda = () => {
                     </span>
 
                     {hasBookings && (
-                      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-[0.72rem] font-bold text-white shadow-sm">
-                        {bookingCount}
+                      <span className="rounded-full bg-primary/10 px-2 py-1 text-[0.58rem] font-medium text-primary">
+                        موعد
                       </span>
                     )}
                   </div>
