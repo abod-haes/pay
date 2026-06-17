@@ -84,7 +84,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
       <meta charset="utf-8" />
       <title>&#8203;</title>
       <style>
-        @page { size: A4; margin: 10mm; }
+        @page { size: A4; margin: 5mm; }
         @font-face {
           font-family: "notoku";
           src: url("/src/assets/fonts/NotoKufiArabic-Regular.ttf") format("truetype");
@@ -102,45 +102,45 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
         body {
           font-family: "notoku", Tahoma, Arial, sans-serif;
           color: #333333;
-          padding: 16px 18px;
+          padding: 10px;
         }
         .page {
           width: 100%;
           max-width: 210mm;
-          min-height: calc(100vh - 32px);
+          min-height: calc(100vh - 20px);
           margin: 0 auto;
           background: #fff;
           border: 1px solid #e6edf2;
-          border-radius: 18px;
-          padding: 22px 32px 18px;
+          border-radius: 14px;
+          padding: 14px 22px 12px;
           box-shadow: 0 12px 34px rgba(41, 180, 195, 0.08);
         }
         .header {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
-          gap: 40px;
-          min-height: 104px;
+          gap: 28px;
+          min-height: 70px;
         }
-        .logo-block { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding-top: 1px; }
-        .logo-block img { width: 150px; max-height: 76px; object-fit: contain; display: block; }
-        .logo-block span { color: #3b5a92; font-size: 10.5px; font-weight: 800; line-height: 1.6; }
-        .top-lines { width: 300px; padding-top: 17px; color: #3b5a92; font-size: 12px; font-weight: 900; }
-        .top-line { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; line-height: 1.6; }
-        .top-line::before { content: ""; flex: 1; height: 1px; border-bottom: 1.5px dotted #8ba7bb; }
+        .logo-block { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding-top: 0; }
+        .logo-block img { width: 122px; max-height: 58px; object-fit: contain; display: block; }
+        .logo-block span { color: #3b5a92; font-size: 8.8px; font-weight: 800; line-height: 1.35; }
+        .top-lines { width: 260px; padding-top: 8px; color: #3b5a92; font-size: 10px; font-weight: 900; }
+        .top-line { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; line-height: 1.4; }
+        .top-line::before { content: ""; flex: 1; height: 1px; border-bottom: 1.2px dotted #8ba7bb; }
         .brand-rule {
-          height: 4px;
-          margin: 8px 0 24px;
+          height: 3px;
+          margin: 4px 0 12px;
           border-radius: 999px;
           background: linear-gradient(90deg, #29b4c3, #3b5a92);
         }
         .section {
           position: relative;
-          border: 1.5px solid #d7e7ee;
-          border-inline-start: 5px solid #29b4c3;
-          border-radius: 18px;
-          padding: 26px 22px 20px;
-          margin-bottom: 22px;
+          border: 1.2px solid #d7e7ee;
+          border-inline-start: 4px solid #29b4c3;
+          border-radius: 13px;
+          padding: 13px 15px 10px;
+          margin-bottom: 8px;
           background: #fff;
           break-inside: avoid;
           page-break-inside: avoid;
@@ -148,121 +148,130 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
         .section.soft { background: #fbfdfe; }
         .section-title {
           position: absolute;
-          top: -15px;
-          right: 22px;
+          top: -11px;
+          right: 16px;
           background: #fff;
           border: 1px solid #d7e7ee;
           border-radius: 999px;
-          padding: 5px 16px;
+          padding: 2px 12px 3px;
           color: #29b4c3;
           font-family: "Alhurra", "notoku", sans-serif;
-          font-size: 12px;
+          font-size: 9.5px;
           font-weight: 900;
-          line-height: 1.3;
+          line-height: 1.25;
         }
-        .patient-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 28px; }
-        .line-field { display: flex; align-items: end; gap: 10px; min-height: 34px; }
+        .patient-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 18px; }
+        .line-field { display: flex; align-items: end; gap: 7px; min-height: 20px; }
         .line-field.wide { grid-column: span 2; }
-        .line-label { white-space: nowrap; font-size: 11.2px; font-weight: 900; color: #3b5a92; line-height: 1.7; }
+        .line-label { white-space: nowrap; font-size: 9px; font-weight: 900; color: #3b5a92; line-height: 1.35; }
         .line-label::after { content: " :"; }
         .line-value {
           flex: 1;
-          min-height: 27px;
-          border-bottom: 1.35px dotted #9aa7b2;
-          font-size: 11.2px;
+          min-height: 18px;
+          border-bottom: 1.1px dotted #9aa7b2;
+          font-size: 9px;
           font-weight: 800;
           color: #333333;
-          padding: 2px 8px 5px;
-          line-height: 1.7;
+          padding: 0 5px 2px;
+          line-height: 1.35;
         }
-        .options { display: flex; flex-wrap: wrap; gap: 16px 26px; align-items: center; padding: 4px 4px 2px; }
-        .requests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 30px; padding: 5px 4px 3px; }
+        .options { display: flex; flex-wrap: wrap; gap: 7px 15px; align-items: center; padding: 0 2px; }
+        .requests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 20px; padding: 0 2px; }
         .option-item {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: 5px;
           white-space: nowrap;
           color: #333333;
-          font-size: 11.2px;
+          font-size: 9px;
           font-weight: 700;
-          line-height: 1.7;
+          line-height: 1.35;
         }
         .check-box {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 15px;
-          height: 15px;
-          border: 1.7px solid #29b4c3;
-          border-radius: 4px;
+          width: 12px;
+          height: 12px;
+          border: 1.35px solid #29b4c3;
+          border-radius: 3px;
           color: #29b4c3;
-          font-size: 10px;
+          font-size: 8px;
           font-weight: 900;
           line-height: 1;
           background: #fff;
           flex: 0 0 auto;
         }
         .check-box.checked { background: rgba(41, 180, 195, 0.12); }
-        .medical-lines { display: grid; gap: 16px; padding: 4px 10px 0; }
-        .text-lines { display: grid; gap: 16px; padding-top: 4px; }
-        .health-list { display: grid; gap: 12px; padding-top: 4px; }
+        .medical-lines { display: grid; gap: 5px; padding: 0 4px; }
+        .text-lines { display: grid; gap: 5px; padding-top: 0; }
+        .health-list { display: grid; gap: 3px; padding-top: 0; }
         .health-row {
           display: grid;
-          grid-template-columns: 28px minmax(210px, 1fr) minmax(190px, 1.25fr);
+          grid-template-columns: 22px minmax(190px, 1fr) minmax(175px, 1.15fr);
           align-items: end;
-          gap: 13px;
-          font-size: 11.2px;
+          gap: 8px;
+          font-size: 9px;
           font-weight: 800;
           color: #333333;
-          line-height: 1.7;
+          line-height: 1.35;
         }
         .number-badge {
           display: inline-flex;
-          width: 22px;
-          height: 22px;
+          width: 17px;
+          height: 17px;
           align-items: center;
           justify-content: center;
-          border-radius: 7px;
+          border-radius: 5px;
           color: #fff;
-          font-size: 11px;
+          font-size: 8.5px;
           font-weight: 900;
           background: #29b4c3;
         }
-        .line-answer { min-height: 27px; border-bottom: 1.35px dotted #9aa7b2; color: #333333; padding: 2px 8px 5px; line-height: 1.7; }
+        .line-answer { min-height: 18px; border-bottom: 1.1px dotted #9aa7b2; color: #333333; padding: 0 5px 2px; line-height: 1.35; }
         .footer {
-          margin-top: 20px;
-          border-top: 3px solid #29b4c3;
-          padding-top: 9px;
+          margin-top: 6px;
+          border-top: 2.5px solid #29b4c3;
+          padding-top: 5px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 6px;
           color: #3b5a92;
-          font-size: 10.5px;
+          font-size: 8.8px;
           font-weight: 900;
           text-align: center;
         }
-        .footer-pin { color: #29b4c3; font-size: 15px; line-height: 1; }
+        .footer-pin { color: #29b4c3; font-size: 12px; line-height: 1; }
         @media print {
           body { padding: 0 !important; background: #fff !important; }
           .page {
             max-width: none;
-            min-height: calc(297mm - 20mm);
+            min-height: auto;
+            height: calc(297mm - 10mm);
+            overflow: hidden;
             border: 0;
             border-radius: 0;
             box-shadow: none;
-            padding: 11mm 10mm 8mm;
+            padding: 6mm 7mm 5mm;
           }
-          .header { min-height: 96px; }
-          .logo-block img { width: 140px; max-height: 72px; }
-          .brand-rule { margin: 8px 0 22px; }
-          .section { margin-bottom: 20px; padding: 24px 20px 18px; }
-          .patient-grid { gap: 18px 24px; }
-          .line-field { min-height: 32px; }
-          .options { gap: 15px 24px; }
-          .requests { gap: 21px 28px; }
-          .medical-lines, .text-lines { gap: 15px; }
-          .health-list { gap: 11px; }
+          .header { min-height: 63px; }
+          .logo-block img { width: 112px; max-height: 52px; }
+          .logo-block span { font-size: 8px; }
+          .top-lines { padding-top: 6px; font-size: 9px; }
+          .top-line { margin-bottom: 6px; }
+          .brand-rule { margin: 3px 0 10px; }
+          .section { margin-bottom: 7px; padding: 12px 14px 9px; border-radius: 12px; }
+          .section-title { top: -10px; font-size: 8.8px; padding: 2px 10px; }
+          .patient-grid { gap: 7px 16px; }
+          .line-field { min-height: 19px; }
+          .line-label, .line-value, .option-item, .health-row { font-size: 8.6px; }
+          .line-value, .line-answer { min-height: 17px; padding-bottom: 1px; }
+          .options { gap: 6px 13px; }
+          .requests { gap: 7px 17px; }
+          .medical-lines, .text-lines { gap: 4px; }
+          .health-list { gap: 2px; }
+          .footer { margin-top: 4px; padding-top: 4px; font-size: 8px; }
         }
       </style>
     </head>
