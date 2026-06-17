@@ -7,8 +7,14 @@ import Services from "./generalSetting/services";
 import Planting from "./generalSetting/planting";
 import ReminderSettings from "./reminderSettings";
 
+const reminderTabLabels = {
+  ar: "إعدادات التنبيهات",
+  en: "Reminder settings",
+  fa: "تنظیمات یادآوری‌ها",
+};
+
 export default function Setting() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState("services");
   const tabs = [
     {
@@ -24,7 +30,7 @@ export default function Setting() {
     {
       id: "reminders",
       component: <ReminderSettings />,
-      label: "إعدادات التنبيهات",
+      label: reminderTabLabels[i18n.language] || reminderTabLabels.ar,
     },
     {
       id: "special",
