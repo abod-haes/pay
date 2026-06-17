@@ -12,12 +12,15 @@ const getToday = () => new Date().toISOString().split("T")[0];
 const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
   const [fileDate, setFileDate] = useState(getToday());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
 
   const allowedTypes = [
     "application/pdf",
@@ -44,10 +47,90 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
     return null;
   }
 
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setCameraStream(null);
+    setIsCameraOpen(false);
+  };
+
+  const openCamera = async event => {
+    event?.preventDefault?.();
+
+    if (loading) return;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      showError("الكاميرا غير مدعومة على هذا المتصفح");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+
+      setCameraStream(stream);
+      setIsCameraOpen(true);
+
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play?.();
+        }
+      }, 0);
+    } catch (error) {
+      console.error("Failed to open camera", error);
+      showError("تعذر فتح الكاميرا، تأكد من السماح للمتصفح باستخدام الكاميرا");
+    }
+  };
+
+  const captureCameraPhoto = event => {
+    event?.preventDefault?.();
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas) {
+      showError("تعذر التقاط الصورة");
+      return;
+    }
+
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, width, height);
+
+    canvas.toBlob(
+      blob => {
+        if (!blob) {
+          showError("تعذر حفظ الصورة الملتقطة");
+          return;
+        }
+
+        const imageFile = new File([blob], `camera-${Date.now()}.jpg`, { type: "image/jpeg" });
+        setSelectedFile(imageFile);
+        stopCamera();
+      },
+      "image/jpeg",
+      0.92
+    );
+  };
+
   const resetDialog = () => {
     setFileName("");
     setFileDate(getToday());
     setSelectedFile(null);
+    stopCamera();
   };
 
   const openDialog = event => {
@@ -62,6 +145,7 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
   };
 
   const handleFileChange = event => {
+    stopCamera();
     setSelectedFile(event.target.files?.[0] || null);
   };
 
@@ -114,10 +198,6 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-
-      if (cameraInputRef.current) {
-        cameraInputRef.current.value = "";
-      }
     } catch (error) {
       showError(t("error.upload-failed"));
       console.error(error);
@@ -150,7 +230,7 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
               <div>
                 <h3 className="font-main text-[1.05rem] text-[#2F3747]">إضافة ملف جديد</h3>
                 <p className="mt-1 text-[0.72rem] text-[#9AA3AF]">
-                  اختر ملفًا من الجهاز أو التقط صورة بالكاميرا
+                  اختر ملفًا من الجهاز أو افتح الكاميرا والتقط صورة
                 </p>
               </div>
               <button
@@ -179,15 +259,6 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
                   onChange={handleFileChange}
                   disabled={loading}
                 />
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileChange}
-                  disabled={loading}
-                />
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <button
@@ -206,7 +277,7 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
                   <button
                     type="button"
                     className="flex flex-col items-center justify-center gap-2 rounded-[16px] border border-white bg-white p-4 shadow-sm transition hover:border-primary/40"
-                    onClick={() => cameraInputRef.current?.click()}
+                    onClick={openCamera}
                     disabled={loading}
                   >
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F8FAFC] text-[1.35rem] shadow-sm">
@@ -216,6 +287,35 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
                     <span className="text-[0.68rem] text-[#9AA3AF]">التقاط صورة مباشرة</span>
                   </button>
                 </div>
+
+                {isCameraOpen && (
+                  <div className="mt-4 rounded-[16px] border border-[#E4EAF0] bg-white p-3">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="max-h-[280px] w-full rounded-[14px] bg-black object-cover"
+                    />
+                    <canvas ref={canvasRef} className="hidden" />
+                    <div className="mt-3 flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={captureCameraPhoto}
+                        className="rounded-full bg-primary px-6 py-2 text-[0.75rem] font-bold text-white"
+                      >
+                        التقاط الصورة
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="rounded-full border border-[#D5DCE5] px-6 py-2 text-[0.75rem] text-accent"
+                      >
+                        إغلاق الكاميرا
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <p className="mt-4 text-[0.75rem] text-accent">
                   {selectedFile?.name || "لم يتم اختيار ملف أو صورة"}
