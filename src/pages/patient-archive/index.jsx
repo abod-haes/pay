@@ -33,10 +33,32 @@ import useEmployees from "@/hooks/useEmployess";
 import { useReasonQueries } from "@/apis/reason/query";
 import ExcelImage from "@assets/svgs/common/excel-file.png";
 import { Can } from "@/components/shared/can/can";
+import {
+  printPatientQuestionnaire,
+  questionnaireHealthQuestions,
+  questionnaireRequestOptions,
+  questionnaireSourceOptions,
+} from "@/utils/printPatientQuestionnaire";
+
+const getInitialQuestionnaireForm = () => ({
+  sources: [],
+  sourceOther: "",
+  requests: [],
+  medicalHistory: "",
+  currentMedications: "",
+  drugAllergy: "",
+  consultation: "",
+  healthAnswers: questionnaireHealthQuestions.reduce((acc, item) => {
+    acc[item.key] = "";
+    return acc;
+  }, {}),
+});
 
 export default function PatientArchive() {
   const { t, i18n } = useTranslation();
   const [state, dispatch] = useReducer(patientReducer, initialValues);
+  const [questionnaireTarget, setQuestionnaireTarget] = useState(null);
+  const [questionnaireForm, setQuestionnaireForm] = useState(getInitialQuestionnaireForm);
   const navigate = useNavigate();
   const userInfo = localStorage.getItem("authData");
   const parseUserData = JSON.parse(userInfo);
@@ -94,12 +116,13 @@ export default function PatientArchive() {
         label: item.title,
         value: item.id,
       })) || [],
-    [reasonData?.data],
+    [reasonData?.data]
   );
   const rowData = useMemo(
     () =>
       data?.data?.map((item, index) => ({
         id: item.id,
+        patient: item,
         id_show: index + 1 + (state.pageIndex - 1) * state.pageSize,
         name: truncateText({ text: item.full_name, maxLength: 20 }),
         city: truncateText({ text: item?.city?.name, maxLength: 20 }),
@@ -118,7 +141,7 @@ export default function PatientArchive() {
         reason_id: item?.reason?.id,
         reason: item?.reason?.name,
       })) || [],
-    [data?.data],
+    [data?.data]
   );
 
   // ✅ Handlers
@@ -161,43 +184,11 @@ export default function PatientArchive() {
         accessorKey: "number",
         header: t("complaints.phone1"),
         enableColumnFilter: true,
-        // cell: item => {
-        //   const value = item.getValue();
-        //   const rowData = item.row.original;
-        //   return (
-        //     <p
-        //       style={{
-        //         unicodeBidi: "plaintext",
-        //         textAlign: i18n.language === "en" ? "left" : "right",
-        //       }}
-        //     >
-        //       +{rowData.first_phone_number_country_code}
-        //       {value}
-        //     </p>
-        //   );
-        // },
       },
       {
         accessorKey: "phone",
         header: t("complaints.phone2"),
         enableColumnFilter: true,
-        // cell: item => {
-        //   const value = item.getValue();
-        //   const rowData = item.row.original;
-        //   if (!rowData.second_phone_number_country_code) return "---";
-
-        //   return (
-        //     <p
-        //       style={{
-        //         unicodeBidi: "plaintext",
-        //         textAlign: i18n.language === "en" ? "left" : "right",
-        //       }}
-        //     >
-        //       +{rowData.second_phone_number_country_code}
-        //       {value}
-        //     </p>
-        //   );
-        // },
       },
       {
         accessorKey: "birthday",
@@ -257,12 +248,68 @@ export default function PatientArchive() {
     dispatch({ type: patientActions.openReasonModal, payload: row });
   };
 
+  const handleOpenQuestionnaire = row => {
+    setQuestionnaireTarget(row);
+    setQuestionnaireForm(getInitialQuestionnaireForm());
+  };
+
+  const handleCloseQuestionnaire = () => {
+    setQuestionnaireTarget(null);
+    setQuestionnaireForm(getInitialQuestionnaireForm());
+  };
+
+  const toggleQuestionnaireOption = (field, value) => {
+    setQuestionnaireForm(prev => {
+      const current = Array.isArray(prev[field]) ? prev[field] : [];
+      const next = current.includes(value)
+        ? current.filter(item => item !== value)
+        : [...current, value];
+
+      return {
+        ...prev,
+        [field]: next,
+      };
+    });
+  };
+
+  const updateQuestionnaireField = (field, value) => {
+    setQuestionnaireForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateHealthAnswer = (key, value) => {
+    setQuestionnaireForm(prev => ({
+      ...prev,
+      healthAnswers: {
+        ...prev.healthAnswers,
+        [key]: value,
+      },
+    }));
+  };
+
+  const handlePrintQuestionnaire = () => {
+    if (!questionnaireTarget) return;
+
+    printPatientQuestionnaire({
+      patient: questionnaireTarget.patient || questionnaireTarget,
+      form: questionnaireForm,
+    });
+  };
+
   const extraActions = row => {
     const menuItems = [
       {
         label: t("common.display"), // النص هنا
         icon: <img src={show} alt="show" />, // أيقونة فقط
         onClick: () => handleShow(row),
+        show: hasPermissionFunction({
+          group: PERMISSION_GROUP.Patient,
+          type: PERMISSION_ACTION.index,
+        }),
+      },
+      {
+        label: "طباعة استبيان",
+        icon: <span className="text-[0.9rem]">🖨️</span>,
+        onClick: () => handleOpenQuestionnaire(row),
         show: hasPermissionFunction({
           group: PERMISSION_GROUP.Patient,
           type: PERMISSION_ACTION.index,
@@ -557,6 +604,141 @@ export default function PatientArchive() {
           />
         </div>
       </div>
+
+      {questionnaireTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" dir="rtl">
+          <div className="max-h-[92vh] w-full max-w-[980px] overflow-y-auto rounded-[24px] bg-white p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4 border-b border-[#EEF2F6] pb-4">
+              <div>
+                <h3 className="font-main text-[1.15rem] font-bold text-[#2F3747]">طباعة استبيان المريض</h3>
+                <p className="mt-1 text-[0.78rem] text-accent">
+                  معلومات المريض ستظهر تلقائياً، عبئ الأقسام المتبقية ثم اضغط طباعة.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseQuestionnaire}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E7EB] text-accent transition hover:bg-[#F7FAFC]"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="grid gap-5">
+              <section className="rounded-2xl border border-[#E8D8F3] bg-[#FCF8FF] p-4">
+                <h4 className="mb-3 font-main text-[0.92rem] font-bold text-primary">كيف تعرفت علينا؟</h4>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {questionnaireSourceOptions.map(option => (
+                    <label key={option.value} className="flex items-center gap-2 text-[0.8rem] text-[#2F3747]">
+                      <input
+                        type="checkbox"
+                        checked={questionnaireForm.sources.includes(option.value)}
+                        onChange={() => toggleQuestionnaireOption("sources", option.value)}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {questionnaireForm.sources.includes("other") && (
+                  <input
+                    value={questionnaireForm.sourceOther}
+                    onChange={event => updateQuestionnaireField("sourceOther", event.target.value)}
+                    placeholder="اكتب المصدر الآخر"
+                    className="mt-3 h-11 w-full rounded-full border border-[#E4EAF0] px-4 text-[0.8rem] outline-none focus:border-primary"
+                  />
+                )}
+              </section>
+
+              <section className="rounded-2xl border border-[#D9F3D5] bg-[#FBFFFA] p-4">
+                <h4 className="mb-3 font-main text-[0.92rem] font-bold text-[#30a520]">طلب</h4>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {questionnaireRequestOptions.map(option => (
+                    <label key={option.value} className="flex items-center gap-2 text-[0.8rem] text-[#2F3747]">
+                      <input
+                        type="checkbox"
+                        checked={questionnaireForm.requests.includes(option.value)}
+                        onChange={() => toggleQuestionnaireOption("requests", option.value)}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              <section className="grid gap-3 rounded-2xl border border-[#F7DCA3] bg-[#FFFDF8] p-4">
+                <h4 className="font-main text-[0.92rem] font-bold text-[#D98900]">المعلومات الطبية</h4>
+                <input
+                  value={questionnaireForm.medicalHistory}
+                  onChange={event => updateQuestionnaireField("medicalHistory", event.target.value)}
+                  placeholder="سوابق لمرض أو عملية جراحية"
+                  className="h-11 rounded-full border border-[#E4EAF0] px-4 text-[0.8rem] outline-none focus:border-primary"
+                />
+                <input
+                  value={questionnaireForm.currentMedications}
+                  onChange={event => updateQuestionnaireField("currentMedications", event.target.value)}
+                  placeholder="الأدوية المستخدمة حالياً"
+                  className="h-11 rounded-full border border-[#E4EAF0] px-4 text-[0.8rem] outline-none focus:border-primary"
+                />
+                <input
+                  value={questionnaireForm.drugAllergy}
+                  onChange={event => updateQuestionnaireField("drugAllergy", event.target.value)}
+                  placeholder="حساسية لبعض الأدوية"
+                  className="h-11 rounded-full border border-[#E4EAF0] px-4 text-[0.8rem] outline-none focus:border-primary"
+                />
+              </section>
+
+              <section className="rounded-2xl border border-[#F6C8DF] bg-[#FFF9FC] p-4">
+                <h4 className="mb-3 font-main text-[0.92rem] font-bold text-[#E45298]">استشارة</h4>
+                <textarea
+                  value={questionnaireForm.consultation}
+                  onChange={event => updateQuestionnaireField("consultation", event.target.value)}
+                  placeholder="اكتب الاستشارة"
+                  rows={3}
+                  className="w-full resize-none rounded-2xl border border-[#E4EAF0] px-4 py-3 text-[0.8rem] outline-none focus:border-primary"
+                />
+              </section>
+
+              <section className="rounded-2xl border border-[#E5D5F3] bg-white p-4">
+                <h4 className="mb-3 font-main text-[0.92rem] font-bold text-primary">أسئلة طبية</h4>
+                <div className="grid gap-3">
+                  {questionnaireHealthQuestions.map((question, index) => (
+                    <div key={question.key} className="grid gap-2 lg:grid-cols-[32px_1fr_1fr] lg:items-center">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-[0.72rem] font-bold text-white">
+                        {index + 1}
+                      </span>
+                      <label className="text-[0.8rem] font-medium text-[#2F3747]">{question.label}</label>
+                      <input
+                        value={questionnaireForm.healthAnswers[question.key] || ""}
+                        onChange={event => updateHealthAnswer(question.key, event.target.value)}
+                        placeholder="الإجابة"
+                        className="h-10 rounded-full border border-[#E4EAF0] px-4 text-[0.78rem] outline-none focus:border-primary"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#EEF2F6] pt-4">
+              <button
+                type="button"
+                onClick={handleCloseQuestionnaire}
+                className="rounded-full border border-[#D5DCE5] px-8 py-2.5 text-[0.8rem] text-accent transition hover:bg-[#F7FAFC]"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={handlePrintQuestionnaire}
+                className="rounded-full bg-primary px-10 py-2.5 text-[0.8rem] font-bold text-white transition hover:bg-primary/90"
+              >
+                طباعة الاستبيان
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {state.isDeleteModalOpen && (
         <DeleteModal
           isOpen={state.isDeleteModalOpen}
