@@ -230,16 +230,19 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
         }
         .line-answer { min-height: 27px; border-bottom: 1.35px dotted #9aa7b2; color: #333333; padding: 2px 8px 5px; line-height: 1.7; }
         .footer {
-          margin-top: 22px;
+          margin-top: 20px;
           border-top: 3px solid #29b4c3;
-          padding-top: 10px;
+          padding-top: 9px;
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
+          gap: 8px;
           color: #3b5a92;
-          font-size: 10px;
-          font-weight: 800;
+          font-size: 10.5px;
+          font-weight: 900;
+          text-align: center;
         }
+        .footer-pin { color: #29b4c3; font-size: 15px; line-height: 1; }
         @media print {
           body { padding: 0 !important; background: #fff !important; }
           .page {
@@ -338,8 +341,8 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
         </section>
 
         <footer class="footer">
-          <span>Paydar Clinic</span>
-          <span>تم إنشاء الاستبيان من نظام Paydar</span>
+          <span class="footer-pin">⌖</span>
+          <span>النجف الأشرف، شارع الفرات، عمودي، بناية بايدار ط السابع</span>
         </footer>
       </main>
     </body>
