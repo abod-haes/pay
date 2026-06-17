@@ -24,6 +24,10 @@ const acceptedTypes = [
   "image/png",
   "image/jpeg",
   "image/jpg",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -41,6 +45,11 @@ const normalizeUploadLabel = value => {
   }
 
   return text;
+};
+
+const isAllowedFileType = file => {
+  if (!file?.type) return true;
+  return acceptedTypes.includes(file.type) || file.type.startsWith("image/");
 };
 
 // helper: return file icon
@@ -80,6 +89,7 @@ const FileUploader = ({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const inputIdRef = useRef(`file-upload-${Math.random().toString(36).slice(2)}`);
+  const cameraInputIdRef = useRef(`camera-upload-${Math.random().toString(36).slice(2)}`);
   const { i18n } = useTranslation();
   const isRTL = ["ar", "fa"].includes(i18n.language);
   const safeFiles = Array.isArray(files) ? files : [];
@@ -185,7 +195,7 @@ const FileUploader = ({
     const newFiles = Array.from(fileList || []);
 
     if (!newFiles.length) {
-      setError("يرجى اختيار ملف");
+      setError("يرجى اختيار ملف أو التقاط صورة");
       return false;
     }
 
@@ -194,7 +204,7 @@ const FileUploader = ({
       return false;
     }
 
-    const hasUnsupportedFile = newFiles.some(file => !acceptedTypes.includes(file.type));
+    const hasUnsupportedFile = newFiles.some(file => !isAllowedFileType(file));
 
     if (hasUnsupportedFile) {
       setError("نوع الملف غير مدعوم");
@@ -409,7 +419,7 @@ const FileUploader = ({
               <div>
                 <h3 className="font-main text-[1.05rem] text-[#2F3747]">إضافة ملف جديد</h3>
                 <p className="mt-1 text-[0.72rem] text-[#9AA3AF]">
-                  اختر الملف وأدخل الاسم والتاريخ قبل الإضافة
+                  اختر ملفًا من الجهاز أو التقط صورة بالكاميرا
                 </p>
               </div>
               <button
@@ -441,23 +451,49 @@ const FileUploader = ({
                   onChange={handleDialogFileChange}
                   disabled={disable}
                 />
-                <label
-                  htmlFor={inputIdRef.current}
-                  className={`flex cursor-pointer flex-col items-center justify-center gap-2 ${
-                    disable ? "cursor-not-allowed opacity-50" : ""
-                  }`}
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
-                    <img src={uploadIcon} alt="رفع ملف" className="h-6 w-6 opacity-70" />
-                  </span>
-                  <span className="font-main text-[0.82rem] text-[#2F3747]">اختيار ملف</span>
-                  <span className="text-[0.7rem] text-[#9AA3AF]">PDF, Word, Excel, Images</span>
-                  {selectedFiles.length > 0 && (
-                    <span className="mt-1 max-w-full truncate rounded-full bg-white px-3 py-1 text-[0.72rem] text-primary">
-                      {selectedFiles.map(file => file.name).join("، ")}
+                <input
+                  id={cameraInputIdRef.current}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleDialogFileChange}
+                  disabled={disable}
+                />
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label
+                    htmlFor={inputIdRef.current}
+                    className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[16px] border border-white bg-white p-4 shadow-sm transition hover:border-primary/40 ${
+                      disable ? "cursor-not-allowed opacity-50" : ""
+                    }`}
+                  >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F8FAFC] shadow-sm">
+                      <img src={uploadIcon} alt="رفع ملف" className="h-6 w-6 opacity-70" />
                     </span>
-                  )}
-                </label>
+                    <span className="font-main text-[0.82rem] text-[#2F3747]">اختيار ملف</span>
+                    <span className="text-[0.68rem] text-[#9AA3AF]">PDF, Word, Excel, Images</span>
+                  </label>
+
+                  <label
+                    htmlFor={cameraInputIdRef.current}
+                    className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[16px] border border-white bg-white p-4 shadow-sm transition hover:border-primary/40 ${
+                      disable ? "cursor-not-allowed opacity-50" : ""
+                    }`}
+                  >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F8FAFC] text-[1.35rem] shadow-sm">
+                      📷
+                    </span>
+                    <span className="font-main text-[0.82rem] text-[#2F3747]">فتح الكاميرا</span>
+                    <span className="text-[0.68rem] text-[#9AA3AF]">التقاط صورة مباشرة</span>
+                  </label>
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <span className="mt-4 inline-block max-w-full truncate rounded-full bg-white px-3 py-1 text-[0.72rem] text-primary">
+                    {selectedFiles.map(file => file.name || "صورة ملتقطة").join("، ")}
+                  </span>
+                )}
               </div>
 
               {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-500">{error}</p>}
