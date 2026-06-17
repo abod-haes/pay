@@ -49,10 +49,19 @@ const GetServicesStats = ({ type, value }) => {
   return queryResult;
 };
 
-const GetBookingsByDate = ({ year, month, date, enabled = true }) => {
+const GetEarliestBooking = ({ year, month, enabled = true }) => {
   const queryResult = useQuery({
-    queryKey: ["get-dashboard-bookings-by-date", year, month, date],
-    queryFn: () => apis.getBookingsByDate({ year, month, date }),
+    queryKey: ["get-dashboard-earliest-booking", year, month],
+    queryFn: () => apis.getEarliestBooking({ year, month }),
+    enabled,
+  });
+  return queryResult;
+};
+
+const GetBookingsByDate = ({ date, enabled = true }) => {
+  const queryResult = useQuery({
+    queryKey: ["get-dashboard-bookings-by-date", date],
+    queryFn: () => apis.getBookingsByDate({ date }),
     enabled,
   });
   return queryResult;
@@ -65,5 +74,6 @@ export const useDashboardQueries = {
   GetProfits,
   GetBookingsStats,
   GetServicesStats,
+  GetEarliestBooking,
   GetBookingsByDate,
 };
