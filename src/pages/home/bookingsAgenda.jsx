@@ -184,23 +184,23 @@ const BookingsAgenda = () => {
 
   return (
     <Card>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="font-main text-[0.875rem]">جدول الأعمال</p>
-          <div className="flex items-center gap-2">
+          <p className="font-main text-[0.95rem] text-[#1F2937]">جدول الأعمال</p>
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              className="rounded-full border border-primary px-4 py-1 text-[0.75rem] text-primary"
+              className="rounded-full border border-primary px-5 py-1.5 text-[0.75rem] text-primary transition hover:bg-primary hover:text-white"
               onClick={handlePreviousMonth}
             >
               السابق
             </button>
-            <p className="font-main text-[0.85rem] text-[#384250]">
-              {year} / {pad(month)}
+            <p className="min-w-[92px] text-center font-main text-[0.9rem] text-[#384250]">
+              {pad(month)} / {year}
             </p>
             <button
               type="button"
-              className="rounded-full border border-primary px-4 py-1 text-[0.75rem] text-primary"
+              className="rounded-full border border-primary px-5 py-1.5 text-[0.75rem] text-primary transition hover:bg-primary hover:text-white"
               onClick={handleNextMonth}
             >
               التالي
@@ -214,35 +214,57 @@ const BookingsAgenda = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
-            {monthDays.map(item => (
-              <button
-                type="button"
-                key={item.date}
-                onClick={() => setSelectedDay(item)}
-                className="min-h-[118px] rounded-xl border border-[#EFEFEF] bg-white p-3 text-start transition hover:border-primary hover:shadow-sm"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[0.9rem] font-bold text-primary">{item.day}</span>
-                  <span className="rounded-full bg-[#F2FBFC] px-2 py-0.5 text-[0.65rem] text-primary">
-                    {item.bookings.length} حجز
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {item.bookings.slice(0, 3).map((booking, index) => (
-                    <span
-                      key={`${item.date}-${booking?.id || index}`}
-                      title={getBookingTitle(booking)}
-                      className="truncate rounded-md bg-[#F8FAFC] px-2 py-1 text-[0.7rem] text-[#384250]"
-                    >
-                      {getBookingTitle(booking)}
-                    </span>
-                  ))}
-                  {item.bookings.length > 3 && (
-                    <span className="text-[0.65rem] text-primary">+{item.bookings.length - 3}</span>
-                  )}
-                </div>
-              </button>
-            ))}
+            {monthDays.map(item => {
+              const bookingCount = item.bookings.length;
+              const hasBookings = bookingCount > 0;
+              const firstBooking = item.bookings[0];
+
+              return (
+                <button
+                  type="button"
+                  key={item.date}
+                  onClick={() => setSelectedDay(item)}
+                  className={`group min-h-[128px] rounded-2xl border p-3 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${
+                    hasBookings ? "border-primary/20 bg-[#FBFEFF]" : "border-[#EFEFEF] bg-white"
+                  }`}
+                >
+                  <div className="flex h-full flex-col justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F2FBFC] text-[0.9rem] font-bold text-primary">
+                        {item.day}
+                      </span>
+                      {hasBookings && (
+                        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary px-2 text-[0.75rem] font-bold text-white shadow-sm">
+                          {bookingCount}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex min-h-[46px] flex-col justify-end gap-1.5">
+                      {hasBookings ? (
+                        <>
+                          <span
+                            title={getBookingTitle(firstBooking)}
+                            className="line-clamp-2 rounded-xl bg-[#F5F8FA] px-2.5 py-2 text-[0.68rem] leading-5 text-[#384250]"
+                          >
+                            {getBookingTitle(firstBooking)}
+                          </span>
+                          {bookingCount > 1 && (
+                            <span className="text-[0.65rem] font-medium text-primary">
+                              +{bookingCount - 1} حجوزات أخرى
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="rounded-xl bg-[#F8FAFC] px-2.5 py-2 text-center text-[0.68rem] text-[#9AA3AF]">
+                          لا توجد حجوزات
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
