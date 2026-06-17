@@ -32,21 +32,32 @@ const acceptedTypes = [
 
 const getToday = () => new Date().toISOString().split("T")[0];
 
+const normalizeUploadLabel = value => {
+  const text = String(value || "").trim();
+  const englishUploadLabels = ["upload file", "upload files", "add file", "add files"];
+
+  if (!text || englishUploadLabels.includes(text.toLowerCase())) {
+    return "إضافة ملف";
+  }
+
+  return text;
+};
+
 // helper: return file icon
 const getFileIcon = type => {
   if (type?.includes("pdf")) {
-    return <img src={pdf} alt="pdf" className="w-6 h-6" />;
+    return <img src={pdf} alt="pdf" className="h-5 w-5" />;
   }
   if (type?.includes("word")) {
-    return <img src={word} alt="word" className="w-6 h-6" />;
+    return <img src={word} alt="word" className="h-5 w-5" />;
   }
   if (type?.includes("excel")) {
-    return <img src={excel} alt="excel" className="w-6 h-6" />;
+    return <img src={excel} alt="excel" className="h-5 w-5" />;
   }
   if (type?.startsWith("image")) {
-    return <img src={Image} alt="img" className="w-6 h-6" />;
+    return <img src={Image} alt="image" className="h-5 w-5" />;
   }
-  return <img src={Image} alt="file" className="w-6 h-6" />;
+  return <img src={Image} alt="file" className="h-5 w-5" />;
 };
 
 const FileUploader = ({
@@ -72,6 +83,7 @@ const FileUploader = ({
   const { i18n } = useTranslation();
   const isRTL = ["ar", "fa"].includes(i18n.language);
   const safeFiles = Array.isArray(files) ? files : [];
+  const uploadButtonText = normalizeUploadLabel(placeholder);
 
   const uploadFile = async (file, tempId, meta = {}) => {
     const formData = new FormData();
@@ -252,36 +264,45 @@ const FileUploader = ({
 
   const renderFileActions = file => {
     const isUploading = file.uploading;
+    const actionButtonClass =
+      "flex h-8 w-8 items-center justify-center rounded-full border border-[#E4EAF0] bg-white transition hover:bg-[#F5F7FA] disabled:cursor-not-allowed disabled:opacity-40";
 
     return (
-      <div className="flex items-center justify-center gap-1">
-        <button type="button" onClick={() => downloadFile(file)} disabled={isUploading || !file.url}>
-          <img src={download} alt="download" className="w-4 h-4 cursor-pointer" />
+      <div className="flex items-center justify-center gap-2">
+        <button
+          type="button"
+          title="تحميل الملف"
+          aria-label="تحميل الملف"
+          onClick={() => downloadFile(file)}
+          disabled={isUploading || !file.url}
+          className={actionButtonClass}
+        >
+          <img src={download} alt="تحميل" className="h-4 w-4" />
         </button>
 
         <button
           type="button"
+          title="عرض الملف"
+          aria-label="عرض الملف"
           disabled={isUploading || !file.url}
           onClick={() => window.open(file.url, "_blank")}
-          className={`p-1 cursor-pointer rounded ${isUploading ? "opacity-40" : "hover:bg-gray-200"}`}
+          className={actionButtonClass}
         >
-          <img src={view} alt="view" className="w-4 h-4" />
+          <img src={view} alt="عرض" className="h-4 w-4" />
         </button>
 
         {!readOnly && (
           <button
             type="button"
+            title="حذف الملف"
+            aria-label="حذف الملف"
             disabled={isUploading || deleting[file.media_id]}
             onClick={() => deleteFile(file)}
-            className={`p-1 cursor-pointer rounded ${
-              isUploading || deleting[file.media_id]
-                ? "opacity-40 cursor-not-allowed"
-                : "hover:bg-red-100"
-            }`}
+            className={`${actionButtonClass} hover:border-red-100 hover:bg-red-50`}
           >
             {deleting[file.media_id] ? (
               <svg
-                className="animate-spin h-4 w-4 text-red-500"
+                className="h-4 w-4 animate-spin text-red-500"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -301,7 +322,7 @@ const FileUploader = ({
                 />
               </svg>
             ) : (
-              <img src={trash} alt="delete" className="w-4 h-4" />
+              <img src={trash} alt="حذف" className="h-4 w-4" />
             )}
           </button>
         )}
@@ -310,50 +331,59 @@ const FileUploader = ({
   };
 
   const renderFilesTable = () => (
-    <div className="overflow-x-auto rounded-xl border border-[#E5E7EB] bg-white">
-      <table className="min-w-full text-right text-[0.75rem]">
-        <thead className="bg-[#F9FAFB] text-accent">
-          <tr>
-            <th className="px-3 py-3 font-main">#</th>
-            <th className="px-3 py-3 font-main">اسم الملف</th>
-            <th className="px-3 py-3 font-main">التاريخ</th>
-            <th className="px-3 py-3 text-center font-main">الإجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {safeFiles.length ? (
-            safeFiles.map((file, idx) => {
-              const progress = progresses[file.id] || 0;
-              const isUploading = file.uploading;
-
-              return (
-                <tr key={(file.id || file.name) + idx} className="border-t border-[#E5E7EB]">
-                  <td className="px-3 py-3 text-[#333]">{idx + 1}</td>
-                  <td className="px-3 py-3">
-                    <div className="flex items-center gap-2">
-                      {getFileIcon(file.type)}
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-[#333]">{file.name || "-"}</span>
-                        {isUploading && (
-                          <span className="text-[0.65rem] text-primary">جاري الرفع {progress}%</span>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-[#333]">{file.date || "-"}</td>
-                  <td className="px-3 py-3">{renderFileActions(file)}</td>
-                </tr>
-              );
-            })
-          ) : (
+    <div className="overflow-hidden rounded-[18px] border border-[#E4EAF0] bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-right text-[0.78rem]">
+          <thead className="bg-[#F6F8FB] text-[#9AA3AF]">
             <tr>
-              <td colSpan={4} className="px-3 py-6 text-center text-accent">
-                لا توجد ملفات مرفقة
-              </td>
+              <th className="w-[70px] px-4 py-3 font-main">#</th>
+              <th className="px-4 py-3 font-main">اسم الملف</th>
+              <th className="w-[170px] px-4 py-3 font-main">التاريخ</th>
+              <th className="w-[170px] px-4 py-3 text-center font-main">الإجراءات</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {safeFiles.length ? (
+              safeFiles.map((file, idx) => {
+                const progress = progresses[file.id] || 0;
+                const isUploading = file.uploading;
+
+                return (
+                  <tr
+                    key={(file.id || file.name) + idx}
+                    className="border-t border-[#EEF2F6] transition hover:bg-[#FAFBFC]"
+                  >
+                    <td className="px-4 py-3 text-[#6B7280]">{idx + 1}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F7FAFC]">
+                          {getFileIcon(file.type)}
+                        </span>
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate font-main text-[0.82rem] text-[#2F3747]">
+                            {file.name || "غير محدد"}
+                          </span>
+                          {isUploading && (
+                            <span className="mt-1 text-[0.65rem] text-primary">جاري الرفع {progress}%</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[#6B7280]">{file.date || "غير محدد"}</td>
+                    <td className="px-4 py-3">{renderFileActions(file)}</td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-[#A0A8B2]">
+                  لا توجد ملفات مرفقة
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 
@@ -371,15 +401,20 @@ const FileUploader = ({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
-            className="w-full max-w-[520px] rounded-2xl bg-white p-5 shadow-xl"
+            className="w-full max-w-[540px] rounded-[24px] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
             onClick={event => event.stopPropagation()}
             dir={isRTL ? "rtl" : "ltr"}
           >
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="font-main text-[1rem] text-[#333]">إضافة ملف</h3>
+            <div className="mb-5 flex items-start justify-between gap-3 border-b border-[#EEF2F6] pb-4">
+              <div>
+                <h3 className="font-main text-[1.05rem] text-[#2F3747]">إضافة ملف جديد</h3>
+                <p className="mt-1 text-[0.72rem] text-[#9AA3AF]">
+                  اختر الملف وأدخل الاسم والتاريخ قبل الإضافة
+                </p>
+              </div>
               <button
                 type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-[#E5E7EB] text-accent"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E5E7EB] text-accent transition hover:bg-[#F7FAFC]"
                 onClick={closeAddDialog}
               >
                 ×
@@ -396,7 +431,7 @@ const FileUploader = ({
                 className="w-full"
               />
 
-              <div className="rounded-xl border border-dashed border-[#C9D3DD] bg-[#F9FAFB] p-4 text-center">
+              <div className="rounded-[18px] border border-dashed border-[#C9D3DD] bg-[#F8FAFC] p-5 text-center transition hover:border-primary/60">
                 <input
                   id={inputIdRef.current}
                   type="file"
@@ -409,36 +444,39 @@ const FileUploader = ({
                 <label
                   htmlFor={inputIdRef.current}
                   className={`flex cursor-pointer flex-col items-center justify-center gap-2 ${
-                    disable ? "opacity-50 cursor-not-allowed" : ""
+                    disable ? "cursor-not-allowed opacity-50" : ""
                   }`}
                 >
-                  <img src={uploadIcon} alt="upload" className="h-8 w-8 opacity-60" />
-                  <span className="text-[0.8rem] text-accent">اختر الملف من جهازك</span>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
+                    <img src={uploadIcon} alt="رفع ملف" className="h-6 w-6 opacity-70" />
+                  </span>
+                  <span className="font-main text-[0.82rem] text-[#2F3747]">اختيار ملف</span>
+                  <span className="text-[0.7rem] text-[#9AA3AF]">PDF, Word, Excel, Images</span>
                   {selectedFiles.length > 0 && (
-                    <span className="max-w-full truncate text-[0.75rem] text-[#333]">
+                    <span className="mt-1 max-w-full truncate rounded-full bg-white px-3 py-1 text-[0.72rem] text-primary">
                       {selectedFiles.map(file => file.name).join("، ")}
                     </span>
                   )}
                 </label>
               </div>
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
+              {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-500">{error}</p>}
 
               <div className="mt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-[#E5E7EB] px-6 py-2 text-[0.75rem] text-accent"
+                  className="rounded-full border border-[#D5DCE5] px-7 py-2.5 text-[0.78rem] text-accent transition hover:bg-[#F7FAFC]"
                   onClick={closeAddDialog}
                 >
                   إلغاء
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-primary px-6 py-2 text-[0.75rem] font-bold text-white"
+                  className="rounded-full bg-primary px-8 py-2.5 text-[0.78rem] font-bold text-white shadow-sm transition hover:bg-primary/90 disabled:bg-gray-300"
                   onClick={handleConfirmAddFile}
                   disabled={disable}
                 >
-                  إضافة
+                  إضافة الملف
                 </button>
               </div>
             </div>
@@ -455,41 +493,43 @@ const FileUploader = ({
         {renderFilesTable()}
 
         {!readOnly && (
-          <div className="flex justify-end">
+          <div className="flex justify-start">
             <BorderedButton
               type="button"
-              text="إضافة ملف"
+              text={uploadButtonText}
               border="border border-primary"
               textColor="text-primary"
+              otherStyle="min-w-[150px] !px-7 !py-2.5 transition hover:bg-primary hover:!text-white"
               onClick={openAddDialog}
               disabled={disable}
             />
           </div>
         )}
 
-        {error && !isAddDialogOpen && <p className="text-red-500 text-sm mt-1">{error}</p>}
+        {error && !isAddDialogOpen && <p className="mt-1 text-sm text-red-500">{error}</p>}
       </div>
     );
   }
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"}>
+    <div dir={isRTL ? "rtl" : "ltr"} className="w-full">
       {renderAddFileDialog()}
 
       {!readOnly && (
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex justify-start">
           <BorderedButton
             type="button"
-            text={placeholder || "إضافة ملف"}
+            text={uploadButtonText}
             border="border border-primary"
             textColor="text-primary"
+            otherStyle="min-w-[150px] !px-7 !py-2.5 transition hover:bg-primary hover:!text-white"
             onClick={openAddDialog}
             disabled={disable}
           />
         </div>
       )}
 
-      <div className="flex flex-col gap-2 mt-4">
+      <div className="mt-4 flex flex-col gap-3">
         <AnimatePresence>
           {safeFiles.map((file, idx) => {
             const progress = progresses[file.id] || 0;
@@ -500,26 +540,30 @@ const FileUploader = ({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="relative bg-gray-100 rounded-lg border border-gray-200 overflow-hidden"
+                className="relative overflow-hidden rounded-[16px] border border-[#E4EAF0] bg-white shadow-sm transition hover:border-primary/30 hover:shadow-md"
               >
-                <div className="flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center gap-1 h-4 w-4">{getFileIcon(file.type)}</div>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F7FAFC]">
+                    {getFileIcon(file.type)}
+                  </span>
 
-                  {/* اسم الملف */}
-                  <div className="flex flex-1 flex-col truncate mx-2">
-                    <span className="text-sm text-gray-700 truncate">{file.name}</span>
-                    {file.date && <span className="text-[0.65rem] text-gray-500">{file.date}</span>}
+                  <div className="flex min-w-0 flex-1 flex-col text-right">
+                    <span className="truncate font-main text-[0.88rem] text-[#2F3747]">
+                      {file.name || "غير محدد"}
+                    </span>
+                    <span className="mt-1 text-[0.68rem] text-[#9AA3AF]">
+                      {file.date ? `تاريخ الملف: ${file.date}` : "لا يوجد تاريخ"}
+                    </span>
                   </div>
 
-                  {/* أزرار */}
-                  <div className="flex items-center gap-1">{renderFileActions(file)}</div>
+                  <div className="shrink-0">{renderFileActions(file)}</div>
                 </div>
 
                 {/* progress bar كخط تحت الكارت */}
                 {isUploading && (
-                  <div className="h-1 bg-gray-300 w-full">
+                  <div className="h-1 w-full bg-gray-200">
                     <div
-                      className="h-1 bg-red-500 transition-all duration-300"
+                      className="h-1 bg-primary transition-all duration-300"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -530,7 +574,7 @@ const FileUploader = ({
         </AnimatePresence>
       </div>
 
-      {error && !isAddDialogOpen && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      {error && !isAddDialogOpen && <p className="mt-2 text-sm text-red-500">{error}</p>}
 
       {/* معاينة الصورة */}
       <AnimatePresence>
@@ -539,7 +583,7 @@ const FileUploader = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
             onClick={() => setPreviewImage(null)}
           >
             <img src={previewImage} alt="preview" className="max-h-[80vh] max-w-[90vw]" />
