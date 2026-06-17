@@ -16,9 +16,8 @@ const agendaTexts = {
     close: "إغلاق",
     noDayBookings: "لا توجد حجوزات في هذا اليوم",
     booking: "حجز",
-    examination: "فحص",
+    examination: "معاينة",
     appointment: "موعد",
-    examinationCard: "معاينة",
     otherAppointments: "مواعيد أخرى",
     patient: "المريض",
     time: "الوقت",
@@ -38,7 +37,6 @@ const agendaTexts = {
     booking: "Booking",
     examination: "Examination",
     appointment: "Appointment",
-    examinationCard: "Examination",
     otherAppointments: "other appointments",
     patient: "Patient",
     time: "Time",
@@ -58,7 +56,6 @@ const agendaTexts = {
     booking: "رزرو",
     examination: "معاینه",
     appointment: "نوبت",
-    examinationCard: "معاینه",
     otherAppointments: "نوبت دیگر",
     patient: "بیمار",
     time: "زمان",
@@ -204,8 +201,7 @@ const getAgendaItemType = item => {
 
 const getAgendaItemLabel = (item, texts) =>
   getAgendaItemType(item) === "examination" ? texts.examination : texts.booking;
-const getAgendaCardLabel = (item, texts) =>
-  getAgendaItemType(item) === "examination" ? texts.examinationCard : texts.appointment;
+const getAgendaCardLabel = getAgendaItemLabel;
 
 const getBookingTitle = (booking, texts) => {
   const title = String(booking?.title || "").trim();
@@ -236,18 +232,6 @@ const getDayCardTitle = (booking, texts) => {
   const time = getBookingTime(booking);
 
   return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || getAgendaCardLabel(booking, texts);
-};
-
-const getCompactBookingDetails = (booking, texts) => {
-  const service = booking?.service?.name || getAgendaCardLabel(booking, texts);
-  const patient = booking?.patient?.full_name || booking?.patient_name || "";
-  const time = getBookingTime(booking);
-
-  return {
-    service,
-    patient,
-    time: time && time !== "-" ? time : "",
-  };
 };
 
 const normalizeMonthBookings = payload => {
@@ -380,45 +364,31 @@ const BookingsAgenda = () => {
         ) : monthDays.length ? (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {monthDays.map(item => {
-              const bookingCount = item.bookings.length;
               const firstBooking = item.bookings[0];
-              const bookingDetails = getCompactBookingDetails(firstBooking, texts);
+              const cardLabel = getAgendaItemLabel(firstBooking, texts);
 
               return (
                 <button
                   type="button"
                   key={item.date}
                   onClick={() => setSelectedDay(item)}
-                  className="group flex min-h-[90px] flex-col rounded-[18px] border border-primary/25 bg-[#FBFEFF] p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                  className="group flex min-h-[82px] flex-col rounded-[18px] border border-primary/25 bg-[#FBFEFF] p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[1rem] font-bold text-primary">
                       {item.day}
                     </span>
-                    {bookingCount > 1 && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[0.62rem] font-bold text-primary">
-                        +{bookingCount - 1}
-                      </span>
-                    )}
                   </div>
 
                   <div className="mt-2 h-px w-full bg-[#EDF5F7]" />
 
-                  <div className="mt-2 flex flex-1 flex-col justify-center rounded-xl bg-[#F8FAFC] px-2.5 py-2">
+                  <div className="mt-2 flex flex-1 items-center justify-center rounded-xl bg-[#F8FAFC] px-2.5 py-2">
                     <span
                       title={getDayCardTitle(firstBooking, texts)}
-                      className="line-clamp-1 text-[0.74rem] font-bold leading-5 text-[#273142]"
+                      className="line-clamp-1 text-center text-[0.78rem] font-bold leading-5 text-[#273142]"
                     >
-                      {bookingDetails.service}
+                      {cardLabel}
                     </span>
-                    {(bookingDetails.patient || bookingDetails.time) && (
-                      <span className="line-clamp-1 text-[0.65rem] leading-5 text-[#7A8699]">
-                        {[bookingDetails.patient, bookingDetails.time].filter(Boolean).join(" • ")}
-                      </span>
-                    )}
-                    {bookingCount > 1 && (
-                      <span className="mt-1 text-[0.62rem] font-medium text-primary">{texts.otherAppointments}</span>
-                    )}
                   </div>
                 </button>
               );
