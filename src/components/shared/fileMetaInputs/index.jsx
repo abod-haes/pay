@@ -1,7 +1,25 @@
 import DatePicker from "react-multi-date-picker";
+import { useTranslation } from "react-i18next";
 
 const inputClassName =
   "h-[38px] rounded-full border border-[#E5E7EB] bg-white px-4 text-[0.75rem] outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-gray-50";
+
+const metaTexts = {
+  ar: {
+    namePlaceholder: "اسم الملف",
+    datePlaceholder: "تاريخ الملف",
+  },
+  en: {
+    namePlaceholder: "File name",
+    datePlaceholder: "File date",
+  },
+  fa: {
+    namePlaceholder: "نام فایل",
+    datePlaceholder: "تاریخ فایل",
+  },
+};
+
+const getMetaTexts = language => metaTexts[language] || metaTexts.ar;
 
 const normalizeDateValue = value => {
   if (!value) {
@@ -22,15 +40,18 @@ const FileMetaInputs = ({
   setFileDate,
   disabled = false,
   className = "",
-  namePlaceholder = "اسم الملف",
-  datePlaceholder = "تاريخ الملف",
+  namePlaceholder,
+  datePlaceholder,
 }) => {
+  const { i18n } = useTranslation();
+  const texts = getMetaTexts(i18n.language);
+
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       <input
         type="text"
         className={inputClassName}
-        placeholder={namePlaceholder}
+        placeholder={namePlaceholder || texts.namePlaceholder}
         value={fileName}
         onChange={event => setFileName(event.target.value)}
         disabled={disabled}
@@ -50,7 +71,7 @@ const FileMetaInputs = ({
             onClick={openCalendar}
             disabled={disabled}
           >
-            {value || datePlaceholder}
+            {value || datePlaceholder || texts.datePlaceholder}
           </button>
         )}
       />
