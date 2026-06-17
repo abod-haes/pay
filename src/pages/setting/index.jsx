@@ -5,6 +5,7 @@ import BreadCrumb from "@/components/breadcrumb";
 import { useTranslation } from "react-i18next";
 import Services from "./generalSetting/services";
 import Planting from "./generalSetting/planting";
+import ReminderSettings from "./reminderSettings";
 
 export default function Setting() {
   const { t } = useTranslation();
@@ -19,6 +20,11 @@ export default function Setting() {
       id: "planting",
       component: <Planting />,
       translationKey: "setting.planting",
+    },
+    {
+      id: "reminders",
+      component: <ReminderSettings />,
+      label: "إعدادات التنبيهات",
     },
     {
       id: "special",
@@ -41,7 +47,7 @@ export default function Setting() {
               }`}
               onClick={() => setActiveTab(tab.id)}
             >
-              {t(tab.translationKey)}
+              {tab.label || t(tab.translationKey)}
             </button>
           ))}
         </div>
