@@ -94,6 +94,11 @@ const splitDateTime = (dateValue, fallbackTime) => {
 
 const getPrintDateValue = value => splitDateTime(value).date;
 
+const getHeaderDate = () => new Date().toLocaleDateString("ar");
+
+const getHeaderNumber = ({ explicitNumber, patient }) =>
+  explicitNumber || patient?.id || patient?.patient_id || patient?.identity_number || patient?.code || "-";
+
 const getPrintRowContext = options => {
   if (options?.title || options?.detailsTitle) {
     return {
@@ -212,121 +217,128 @@ const buildPrintHtml = ({
   bookings = [],
   files = [],
   extraSections = [],
-}) => `
-  <!doctype html>
-  <html lang="ar" dir="rtl">
-    <head>
-      <meta charset="utf-8" />
-      <title>&#8203;</title>
-      <style>
-        @page { size: A4; margin: 0; }
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        html, body { margin: 0; padding: 0; background: #fff; }
-        body { font-family: Arial, Tahoma, sans-serif; color: #1f2937; padding: 12px; line-height: 1.55; }
-        .print-page { min-height: calc(100vh - 24px); border: 1px solid #d7edf1; border-radius: 10px; overflow: hidden; background: #fff; }
-        .clinic-header { padding: 18px 26px 10px; background: #fff; }
-        .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
-        .clinic-logo { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 180px; }
-        .clinic-logo img { max-width: 150px; max-height: 72px; object-fit: contain; display: block; }
-        .clinic-subtitle { color: #34466b; font-size: 10.5px; font-weight: 800; margin: 0; }
-        .clinic-lines { flex: 1; max-width: 360px; color: #2b3f71; font-size: 13px; font-weight: 900; padding-top: 8px; }
-        .clinic-line { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .clinic-line span { white-space: nowrap; }
-        .clinic-line::before { content: ""; flex: 1; height: 1px; border-bottom: 1px dotted #7b8aa8; }
-        .brand-rule, .footer-rule { height: 4px; border-radius: 999px; background: linear-gradient(90deg, #29b4c3 0%, #3b5a92 100%); }
-        .brand-rule { margin-top: 10px; }
-        .report-title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 26px 0; }
-        .report-title { margin: 0; color: #29b4c3; font-size: 18px; font-weight: 900; }
-        .print-date-pill { border: 1px solid #d7edf1; border-radius: 999px; padding: 6px 12px; color: #34466b; background: #f7fdfe; font-size: 11px; font-weight: 800; }
-        .content { padding: 16px 26px 14px; }
-        .section { margin-bottom: 13px; border: 1.5px solid #d7edf1; border-radius: 14px; padding: 13px; background: #fff; break-inside: avoid; }
-        .section-title { display: inline-flex; align-items: center; margin: -2px 0 12px; padding: 4px 12px; border-radius: 999px; background: #e8f8fb; color: #29b4c3; font-size: 13px; font-weight: 900; }
-        .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 14px; }
-        .info-item { display: grid; grid-template-columns: 105px 1fr; gap: 8px; align-items: end; min-height: 32px; }
-        .info-item.full { grid-column: 1 / -1; }
-        .info-label { color: #34466b; font-size: 12px; font-weight: 900; white-space: nowrap; }
-        .info-label::after { content: " :"; }
-        .info-value { min-height: 24px; color: #1f2937; font-size: 12.5px; font-weight: 800; border-bottom: 1px dotted #7b8aa8; padding-bottom: 2px; word-break: break-word; }
-        .table-wrap { border: 1px solid #d7edf1; border-radius: 12px; overflow: hidden; background: #fff; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 8px 9px; text-align: right; font-size: 11.5px; border-bottom: 1px solid #edf6f8; vertical-align: middle; }
-        tr:last-child td { border-bottom: 0; }
-        th { background: #f7fdfe; color: #34466b; font-weight: 900; white-space: nowrap; }
-        .label-cell { width: 30%; color: #34466b; background: #f7fdfe; font-weight: 900; }
-        .index-cell { width: 44px; text-align: center; color: #29b4c3; font-weight: 900; }
-        .status-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 62px; padding: 4px 9px; border-radius: 999px; background: #e8f8fb; color: #29b4c3; font-weight: 900; font-size: 10.5px; }
-        .empty { padding: 20px 12px; text-align: center; color: #7b8aa8; background: #fbfeff; }
-        .clinic-footer { padding: 0 26px 16px; }
-        .footer-rule { margin-bottom: 8px; }
-        .footer-content { display: flex; align-items: center; justify-content: center; gap: 8px; color: #34466b; font-size: 10.5px; font-weight: 800; }
-        @media print {
-          html, body { margin: 0 !important; padding: 0 !important; }
-          body { padding: 8px !important; }
-          .print-page { min-height: calc(100vh - 16px); }
-          .section { page-break-inside: avoid; }
-          tr { break-inside: avoid; page-break-inside: avoid; }
-        }
-      </style>
-    </head>
-    <body>
-      <main class="print-page">
-        <header class="clinic-header">
-          <div class="header-top">
-            <div class="clinic-logo">
-              <img src="${logo}" alt="Paydar" />
-              <p class="clinic-subtitle">عيادة التخصصي لزراعة الشعر</p>
-            </div>
-            <div class="clinic-lines">
-              <div class="clinic-line"><span>التاريخ</span></div>
-              <div class="clinic-line"><span>الرقم</span></div>
-            </div>
-          </div>
-          <div class="brand-rule"></div>
-        </header>
+  documentNumber = "",
+}) => {
+  const headerDate = getHeaderDate();
+  const headerNumber = getHeaderNumber({ explicitNumber: documentNumber, patient });
 
-        <div class="report-title-row">
-          <h1 class="report-title">${escapeHtml(title)}</h1>
-          <div class="print-date-pill">تاريخ الطباعة: ${escapeHtml(new Date().toLocaleString("ar"))}</div>
-        </div>
+  return `
+   <!doctype html>
+   <html lang="ar" dir="rtl">
+     <head>
+       <meta charset="utf-8" />
+       <title>&#8203;</title>
+       <style>
+         @page { size: A4; margin: 0; }
+         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+         html, body { margin: 0; padding: 0; background: #fff; }
+         body { font-family: Arial, Tahoma, sans-serif; color: #1f2937; padding: 12px; line-height: 1.55; }
+         .print-page { min-height: calc(100vh - 24px); border: 1px solid #d7edf1; border-radius: 10px; overflow: hidden; background: #fff; }
+         .clinic-header { padding: 18px 26px 10px; background: #fff; }
+         .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+         .clinic-logo { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 180px; }
+         .clinic-logo img { max-width: 150px; max-height: 72px; object-fit: contain; display: block; }
+         .clinic-subtitle { color: #34466b; font-size: 10.5px; font-weight: 800; margin: 0; }
+         .clinic-lines { flex: 1; max-width: 360px; color: #2b3f71; font-size: 13px; font-weight: 900; padding-top: 8px; }
+         .clinic-line { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+         .clinic-line span { white-space: nowrap; }
+         .clinic-line strong { min-width: 86px; text-align: start; color: #1f2937; font-size: 12px; font-weight: 900; }
+         .clinic-line::before { content: ""; flex: 1; height: 1px; border-bottom: 1px dotted #7b8aa8; }
+         .brand-rule, .footer-rule { height: 4px; border-radius: 999px; background: linear-gradient(90deg, #29b4c3 0%, #3b5a92 100%); }
+         .brand-rule { margin-top: 10px; }
+         .report-title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 26px 0; }
+         .report-title { margin: 0; color: #29b4c3; font-size: 18px; font-weight: 900; }
+         .print-date-pill { border: 1px solid #d7edf1; border-radius: 999px; padding: 6px 12px; color: #34466b; background: #f7fdfe; font-size: 11px; font-weight: 800; }
+         .content { padding: 16px 26px 14px; }
+         .section { margin-bottom: 13px; border: 1.5px solid #d7edf1; border-radius: 14px; padding: 13px; background: #fff; break-inside: avoid; }
+         .section-title { display: inline-flex; align-items: center; margin: -2px 0 12px; padding: 4px 12px; border-radius: 999px; background: #e8f8fb; color: #29b4c3; font-size: 13px; font-weight: 900; }
+         .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 14px; }
+         .info-item { display: grid; grid-template-columns: 105px 1fr; gap: 8px; align-items: end; min-height: 32px; }
+         .info-item.full { grid-column: 1 / -1; }
+         .info-label { color: #34466b; font-size: 12px; font-weight: 900; white-space: nowrap; }
+         .info-label::after { content: " :"; }
+         .info-value { min-height: 24px; color: #1f2937; font-size: 12.5px; font-weight: 800; border-bottom: 1px dotted #7b8aa8; padding-bottom: 2px; word-break: break-word; }
+         .table-wrap { border: 1px solid #d7edf1; border-radius: 12px; overflow: hidden; background: #fff; }
+         table { width: 100%; border-collapse: collapse; }
+         th, td { padding: 8px 9px; text-align: right; font-size: 11.5px; border-bottom: 1px solid #edf6f8; vertical-align: middle; }
+         tr:last-child td { border-bottom: 0; }
+         th { background: #f7fdfe; color: #34466b; font-weight: 900; white-space: nowrap; }
+         .label-cell { width: 30%; color: #34466b; background: #f7fdfe; font-weight: 900; }
+         .index-cell { width: 44px; text-align: center; color: #29b4c3; font-weight: 900; }
+         .status-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 62px; padding: 4px 9px; border-radius: 999px; background: #e8f8fb; color: #29b4c3; font-weight: 900; font-size: 10.5px; }
+         .empty { padding: 20px 12px; text-align: center; color: #7b8aa8; background: #fbfeff; }
+         .clinic-footer { padding: 0 26px 16px; }
+         .footer-rule { margin-bottom: 8px; }
+         .footer-content { display: flex; align-items: center; justify-content: center; gap: 8px; color: #34466b; font-size: 10.5px; font-weight: 800; }
+         @media print {
+           html, body { margin: 0 !important; padding: 0 !important; }
+           body { padding: 8px !important; }
+           .print-page { min-height: calc(100vh - 16px); }
+           .section { page-break-inside: avoid; }
+           tr { break-inside: avoid; page-break-inside: avoid; }
+         }
+       </style>
+     </head>
+     <body>
+       <main class="print-page">
+         <header class="clinic-header">
+           <div class="header-top">
+             <div class="clinic-logo">
+               <img src="${logo}" alt="Paydar" />
+               <p class="clinic-subtitle">عيادة التخصصي لزراعة الشعر</p>
+             </div>
+             <div class="clinic-lines">
+               <div class="clinic-line"><span>التاريخ</span><strong>${escapeHtml(headerDate)}</strong></div>
+               <div class="clinic-line"><span>الرقم</span><strong>${escapeHtml(headerNumber)}</strong></div>
+             </div>
+           </div>
+           <div class="brand-rule"></div>
+         </header>
 
-        <section class="content">
-          ${buildSection({
-            title: "معلومات المريض",
-            children: `<div class="info-grid">${buildInfoRows(getPatientInfoRows(patient))}</div>`,
-          })}
+         <div class="report-title-row">
+           <h1 class="report-title">${escapeHtml(title)}</h1>
+           <div class="print-date-pill">تاريخ الطباعة: ${escapeHtml(new Date().toLocaleString("ar"))}</div>
+         </div>
 
-          ${details?.length ? buildSection({
-            title: detailsTitle,
-            children: `<div class="table-wrap"><table><tbody>${buildDetailsTableRows(details)}</tbody></table></div>`,
-          }) : ""}
+         <section class="content">
+           ${buildSection({
+             title: "معلومات المريض",
+             children: `<div class="info-grid">${buildInfoRows(getPatientInfoRows(patient))}</div>`,
+           })}
 
-          ${extraSections
-            .map(section =>
-              buildSection({
-                title: section.title,
-                children: `<div class="table-wrap"><table><tbody>${buildDetailsTableRows(section.rows || [])}</tbody></table></div>`,
-              })
-            )
-            .join("")}
+           ${details?.length ? buildSection({
+             title: detailsTitle,
+             children: `<div class="table-wrap"><table><tbody>${buildDetailsTableRows(details)}</tbody></table></div>`,
+           }) : ""}
 
-          ${bookings?.length ? buildSection({
-            title: "كل الحجوزات",
-            children: `<div class="table-wrap"><table><thead><tr><th>#</th><th>الخدمة</th><th>القسم</th><th>التاريخ</th><th>الوقت</th><th>طريقة الحجز</th><th>الحالة</th><th>الموظف / الطبيب</th></tr></thead><tbody>${buildBookingsRows(bookings)}</tbody></table></div>`,
-          }) : ""}
+           ${extraSections
+             .map(section =>
+               buildSection({
+                 title: section.title,
+                 children: `<div class="table-wrap"><table><tbody>${buildDetailsTableRows(section.rows || [])}</tbody></table></div>`,
+               })
+             )
+             .join("")}
 
-          ${files?.length ? buildSection({
-            title: "ملفات المريض",
-            children: `<div class="table-wrap"><table><thead><tr><th>#</th><th>اسم الملف</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${buildFilesRows(files)}</tbody></table></div>`,
-          }) : ""}
-        </section>
+           ${bookings?.length ? buildSection({
+             title: "كل الحجوزات",
+             children: `<div class="table-wrap"><table><thead><tr><th>#</th><th>الخدمة</th><th>القسم</th><th>التاريخ</th><th>الوقت</th><th>طريقة الحجز</th><th>الحالة</th><th>الموظف / الطبيب</th></tr></thead><tbody>${buildBookingsRows(bookings)}</tbody></table></div>`,
+           }) : ""}
 
-        <footer class="clinic-footer">
-          <div class="footer-rule"></div>
-          <div class="footer-content">النجف الأشرف، شارع الفرات، عمودي، بناية بايدار ط السابع</div>
-        </footer>
-      </main>
-    </body>
-  </html>`;
+           ${files?.length ? buildSection({
+             title: "ملفات المريض",
+             children: `<div class="table-wrap"><table><thead><tr><th>#</th><th>اسم الملف</th><th>التاريخ</th><th>الحالة</th></tr></thead><tbody>${buildFilesRows(files)}</tbody></table></div>`,
+           }) : ""}
+         </section>
+
+         <footer class="clinic-footer">
+           <div class="footer-rule"></div>
+           <div class="footer-content">النجف الأشرف، شارع الفرات، عمودي، بناية بايدار ط السابع</div>
+         </footer>
+       </main>
+     </body>
+   </html>`;
+};
 
 export const printPatientData = ({
   title = "معلومات المريض",
@@ -336,11 +348,12 @@ export const printPatientData = ({
   bookings,
   files,
   extraSections,
+  documentNumber,
 }) => {
   const printWindow = window.open("", "_blank", "width=900,height=700");
   if (!printWindow) return;
 
-  printWindow.document.write(buildPrintHtml({ title, patient, detailsTitle, details, bookings, files, extraSections }));
+  printWindow.document.write(buildPrintHtml({ title, patient, detailsTitle, details, bookings, files, extraSections, documentNumber }));
   printWindow.document.close();
   printWindow.document.title = "\u200B";
   printWindow.focus();
@@ -356,6 +369,7 @@ export const printBookingRow = (row, options = {}) => {
   printPatientData({
     title: printContext.title,
     detailsTitle: printContext.detailsTitle,
+    documentNumber: row?.id || row?.booking_id || row?.patient_id || row?.patientx?.id,
     patient: row?.patientx || row,
     details: [
       { label: "الخدمة", value: row?.serviceName || row?.service },
@@ -376,6 +390,7 @@ export const printPatientWithBookings = ({ patient, bookings, files }) => {
   printPatientData({
     title: "طباعة إضبارة مريض",
     patient,
+    documentNumber: patient?.id || patient?.patient_id || patient?.identity_number,
     bookings,
     files: patientFiles,
     extraSections: [
