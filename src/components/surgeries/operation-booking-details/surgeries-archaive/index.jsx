@@ -83,6 +83,7 @@ const SurgeriesArchaive = ({
             placeholder="رفع ملف مع الاسم والتاريخ"
             maxFiles={20}
             tableView
+            readOnly
           />
         </div>
       </Card>
