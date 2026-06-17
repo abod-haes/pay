@@ -66,7 +66,11 @@ const agendaTexts = {
   },
 };
 
-const getAgendaTexts = language => agendaTexts[language] || agendaTexts.ar;
+const getAgendaTexts = language => {
+  const languageKey = String(language || "ar").split("-")[0];
+  return agendaTexts[languageKey] || agendaTexts.ar;
+};
+
 const formatMessage = (template, values = {}) =>
   Object.entries(values).reduce((text, [key, value]) => text.replace(`{{${key}}}`, value), template);
 
@@ -201,7 +205,14 @@ const getAgendaItemType = item => {
 
 const getAgendaItemLabel = (item, texts) =>
   getAgendaItemType(item) === "examination" ? texts.examination : texts.booking;
-const getAgendaCardLabel = getAgendaItemLabel;
+
+const getDayAgendaLabels = (items, texts) => {
+  const safeItems = Array.isArray(items) ? items : [];
+  const hasExamination = safeItems.some(item => getAgendaItemType(item) === "examination");
+  const hasBooking = safeItems.some(item => getAgendaItemType(item) === "booking");
+
+  return [hasExamination ? texts.examination : null, hasBooking ? texts.booking : null].filter(Boolean);
+};
 
 const getBookingTitle = (booking, texts) => {
   const title = String(booking?.title || "").trim();
@@ -219,19 +230,6 @@ const getBookingTitle = (booking, texts) => {
   ]
     .filter(Boolean)
     .join(" ");
-};
-
-const getDayCardTitle = (booking, texts) => {
-  if (!booking) return "";
-
-  const title = getBookingTitle(booking, texts);
-  if (!isGenericBookingTitle(title)) return title;
-
-  const serviceName = booking?.service?.name;
-  const patientName = booking?.patient?.full_name || booking?.patient_name;
-  const time = getBookingTime(booking);
-
-  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || getAgendaCardLabel(booking, texts);
 };
 
 const normalizeMonthBookings = payload => {
@@ -364,31 +362,33 @@ const BookingsAgenda = () => {
         ) : monthDays.length ? (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
             {monthDays.map(item => {
-              const firstBooking = item.bookings[0];
-              const cardLabel = getAgendaItemLabel(firstBooking, texts);
+              const dayLabels = getDayAgendaLabels(item.bookings, texts);
+              const labelsTitle = dayLabels.join(" / ");
 
               return (
                 <button
                   type="button"
                   key={item.date}
                   onClick={() => setSelectedDay(item)}
-                  className="group flex min-h-[82px] flex-col rounded-[18px] border border-primary/25 bg-[#FBFEFF] p-2.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                  className="group flex min-h-[72px] flex-col rounded-[16px] border border-primary/20 bg-[#FBFEFF] p-2 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[1rem] font-bold text-primary">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[0.95rem] font-bold text-primary">
                       {item.day}
                     </span>
                   </div>
 
                   <div className="mt-2 h-px w-full bg-[#EDF5F7]" />
 
-                  <div className="mt-2 flex flex-1 items-center justify-center rounded-xl bg-[#F8FAFC] px-2.5 py-2">
-                    <span
-                      title={getDayCardTitle(firstBooking, texts)}
-                      className="line-clamp-1 text-center text-[0.78rem] font-bold leading-5 text-[#273142]"
-                    >
-                      {cardLabel}
-                    </span>
+                  <div className="mt-2 flex flex-1 flex-wrap items-center justify-center gap-1" title={labelsTitle}>
+                    {dayLabels.map(label => (
+                      <span
+                        key={label}
+                        className="rounded-full bg-primary/10 px-2.5 py-1 text-[0.68rem] font-bold leading-none text-primary"
+                      >
+                        {label}
+                      </span>
+                    ))}
                   </div>
                 </button>
               );
