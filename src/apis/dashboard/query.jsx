@@ -51,7 +51,7 @@ const GetServicesStats = ({ type, value }) => {
 
 const GetEarliestBooking = ({ year, month, enabled = true }) => {
   const queryResult = useQuery({
-    queryKey: ["get-dashboard-earliest-booking", year, month],
+    queryKey: ["get-dashboard-earliest-bookings", year, month],
     queryFn: () => apis.getEarliestBooking({ year, month }),
     enabled,
   });

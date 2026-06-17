@@ -21,7 +21,7 @@ const getServicesStats = async ({ type, value }) => {
 };
 
 const getEarliestBooking = async ({ year, month }) => {
-  const { data } = await ApiInstance.get(`${ROUTES.GET}/earliest-booking`, {
+  const { data } = await ApiInstance.get(`${ROUTES.GET}/earliest-bookings`, {
     params: { year, month },
   });
   return data;
