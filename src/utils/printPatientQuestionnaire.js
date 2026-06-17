@@ -85,49 +85,154 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
       <title>&#8203;</title>
       <style>
         @page { size: A4; margin: 0; }
+        @font-face {
+          font-family: "notoku";
+          src: url("/src/assets/fonts/NotoKufiArabic-Regular.ttf") format("truetype");
+          font-weight: 400;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: "Alhurra";
+          src: url("/src/assets/fonts/Alhurra Regular.ttf") format("truetype");
+          font-weight: 400;
+          font-style: normal;
+        }
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        html, body { margin: 0; padding: 0; background: #fff; }
-        body { font-family: Arial, Tahoma, sans-serif; color: #192040; padding: 10px 14px; }
-        .page { min-height: calc(100vh - 20px); border: 1px solid #f4e8fb; background: #fff; padding: 10px 28px 8px; }
-        .header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
-        .logo-block { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-        .logo-block img { width: 150px; max-height: 78px; object-fit: contain; display: block; }
-        .logo-block span { color: #7b1fc1; font-size: 10px; font-weight: 800; }
-        .top-lines { width: 280px; padding-top: 8px; color: #161e55; font-size: 13px; font-weight: 900; }
+        html, body { margin: 0; padding: 0; background: #f9f9f9; }
+        body {
+          font-family: "notoku", Tahoma, Arial, sans-serif;
+          color: #333333;
+          padding: 12px 16px;
+        }
+        .page {
+          min-height: calc(100vh - 24px);
+          background: #fff;
+          border: 1px solid #e6edf2;
+          border-radius: 18px;
+          padding: 14px 26px 10px;
+          box-shadow: 0 12px 34px rgba(41, 180, 195, 0.08);
+        }
+        .header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 24px;
+        }
+        .logo-block { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .logo-block img { width: 148px; max-height: 76px; object-fit: contain; display: block; }
+        .logo-block span { color: #3b5a92; font-size: 10px; font-weight: 800; }
+        .top-lines { width: 280px; padding-top: 8px; color: #3b5a92; font-size: 12px; font-weight: 900; }
         .top-line { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-        .top-line::before { content: ""; flex: 1; height: 1px; border-bottom: 1.5px dotted #1e2555; }
-        .purple-rule { height: 5px; margin: 8px 0 10px; border-radius: 999px; background: #8b28c6; }
-        .section { position: relative; border: 1.6px solid #8b28c6; border-radius: 10px; padding: 13px 16px; margin-bottom: 10px; }
-        .section.blue { border-color: #1fa6ff; }
-        .section.green { border-color: #52ce3c; }
-        .section.orange { border-color: #f0ac2b; }
-        .section.pink { border-color: #f39ac8; }
-        .section.purple { border-color: #9b54d3; }
-        .section-title { position: absolute; top: -10px; right: 18px; background: #fff; padding: 0 8px; color: #7b1fc1; font-size: 12px; font-weight: 900; }
-        .section.blue .section-title { color: #168fd8; }
-        .section.green .section-title { color: #30a520; }
-        .section.orange .section-title { color: #d98900; }
-        .section.pink .section-title { color: #e45298; }
+        .top-line::before { content: ""; flex: 1; height: 1px; border-bottom: 1.5px dotted #8ba7bb; }
+        .brand-rule {
+          height: 5px;
+          margin: 9px 0 11px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #29b4c3, #3b5a92);
+        }
+        .section {
+          position: relative;
+          border: 1.5px solid #d7e7ee;
+          border-inline-start: 5px solid #29b4c3;
+          border-radius: 16px;
+          padding: 14px 16px 13px;
+          margin-bottom: 10px;
+          background: #fff;
+        }
+        .section.soft { background: #fbfdfe; }
+        .section-title {
+          position: absolute;
+          top: -12px;
+          right: 18px;
+          background: #fff;
+          border: 1px solid #d7e7ee;
+          border-radius: 999px;
+          padding: 2px 12px;
+          color: #29b4c3;
+          font-family: "Alhurra", "notoku", sans-serif;
+          font-size: 12px;
+          font-weight: 900;
+        }
         .patient-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; }
         .line-field { display: flex; align-items: end; gap: 8px; min-height: 24px; }
         .line-field.wide { grid-column: span 2; }
-        .line-label { white-space: nowrap; font-size: 11.5px; font-weight: 900; color: #11184d; }
+        .line-label { white-space: nowrap; font-size: 11px; font-weight: 900; color: #3b5a92; }
         .line-label::after { content: " :"; }
-        .line-value { flex: 1; min-height: 18px; border-bottom: 1.4px dotted #333; font-size: 12px; font-weight: 800; color: #111; padding: 0 4px 1px; }
+        .line-value {
+          flex: 1;
+          min-height: 18px;
+          border-bottom: 1.3px dotted #9aa7b2;
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #333333;
+          padding: 0 4px 1px;
+        }
         .options { display: grid; grid-template-columns: repeat(7, max-content); gap: 10px 14px; align-items: center; }
         .requests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; padding-top: 3px; }
-        .option-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: #1b244f; font-size: 11.5px; font-weight: 700; }
-        .check-box { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; border: 1.6px solid #55b7f5; color: #18a2e3; font-size: 10px; font-weight: 900; line-height: 1; }
-        .green .check-box, .requests .check-box { border-color: #64d85b; color: #2aad1d; }
-        .check-box.checked { background: #f3fff2; }
-        .medical-lines { display: grid; gap: 8px; padding-right: 62px; }
+        .option-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          color: #333333;
+          font-size: 11px;
+          font-weight: 700;
+        }
+        .check-box {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 14px;
+          height: 14px;
+          border: 1.7px solid #29b4c3;
+          border-radius: 4px;
+          color: #29b4c3;
+          font-size: 10px;
+          font-weight: 900;
+          line-height: 1;
+          background: #fff;
+        }
+        .check-box.checked { background: rgba(41, 180, 195, 0.12); }
+        .medical-lines { display: grid; gap: 8px; padding-right: 14px; }
         .text-lines { display: grid; gap: 8px; }
         .health-list { display: grid; gap: 5px; }
-        .health-row { display: grid; grid-template-columns: 26px 1fr minmax(120px, 1fr); align-items: end; gap: 8px; font-size: 11.5px; font-weight: 800; color: #1b244f; }
-        .number-badge { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 4px; color: #fff; font-size: 11px; font-weight: 900; }
-        .line-answer { min-height: 17px; border-bottom: 1.4px dotted #333; color: #111; padding: 0 4px; }
-        .footer { margin-top: 7px; border-top: 3px solid #8b28c6; padding-top: 5px; display: flex; align-items: center; justify-content: space-between; color: #7b1fc1; font-size: 10px; font-weight: 800; }
-        @media print { body { padding: 0 !important; } .page { min-height: 100vh; border: 0; } }
+        .health-row {
+          display: grid;
+          grid-template-columns: 26px 1fr minmax(120px, 1fr);
+          align-items: end;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 800;
+          color: #333333;
+        }
+        .number-badge {
+          display: inline-flex;
+          width: 21px;
+          height: 21px;
+          align-items: center;
+          justify-content: center;
+          border-radius: 7px;
+          color: #fff;
+          font-size: 11px;
+          font-weight: 900;
+          background: #29b4c3;
+        }
+        .line-answer { min-height: 17px; border-bottom: 1.3px dotted #9aa7b2; color: #333333; padding: 0 4px; }
+        .footer {
+          margin-top: 7px;
+          border-top: 3px solid #29b4c3;
+          padding-top: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          color: #3b5a92;
+          font-size: 10px;
+          font-weight: 800;
+        }
+        @media print {
+          body { padding: 0 !important; background: #fff !important; }
+          .page { min-height: 100vh; border: 0; border-radius: 0; box-shadow: none; }
+        }
       </style>
     </head>
     <body>
@@ -142,7 +247,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
             <div class="top-line"><span>الرقم</span><strong>${escapeHtml(patient?.id || "")}</strong></div>
           </div>
         </header>
-        <div class="purple-rule"></div>
+        <div class="brand-rule"></div>
 
         <section class="section">
           <span class="section-title">معلومات المريض</span>
@@ -158,7 +263,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           </div>
         </section>
 
-        <section class="section blue">
+        <section class="section soft">
           <span class="section-title">كيف تعرفت علينا؟</span>
           <div class="options">${renderInlineOptions(
             QUESTIONNAIRE_SOURCE_OPTIONS,
@@ -167,12 +272,13 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           )}</div>
         </section>
 
-        <section class="section green">
+        <section class="section">
           <span class="section-title">طلب</span>
           <div class="requests">${renderInlineOptions(QUESTIONNAIRE_REQUEST_OPTIONS, form.requests)}</div>
         </section>
 
-        <section class="section orange">
+        <section class="section soft">
+          <span class="section-title">المعلومات الطبية</span>
           <div class="medical-lines">
             ${renderLine({ label: "سوابق لمرض أو عملية جراحية", value: form.medicalHistory })}
             ${renderLine({ label: "الأدوية المستخدمة حالياً", value: form.currentMedications })}
@@ -180,7 +286,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           </div>
         </section>
 
-        <section class="section pink">
+        <section class="section">
           <span class="section-title">استشارة</span>
           <div class="text-lines">
             ${renderLine({ label: "", value: form.consultation, wide: true })}
@@ -189,12 +295,13 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           </div>
         </section>
 
-        <section class="section purple">
+        <section class="section soft">
+          <span class="section-title">أسئلة طبية</span>
           <div class="health-list">
             ${QUESTIONNAIRE_HEALTH_QUESTIONS.map((question, index) => {
-              const colors = ["#6e35b8", "#2585d9", "#43b02a", "#f49b22", "#ec477a", "#16a2c8", "#9450c9", "#5bbd40"];
+              const colors = ["#29b4c3", "#3b5a92"];
               return `<div class="health-row">
-                <span class="number-badge" style="background:${colors[index]}">${index + 1}</span>
+                <span class="number-badge" style="background:${colors[index % colors.length]}">${index + 1}</span>
                 <span>${escapeHtml(question.label)}</span>
                 <strong class="line-answer">${escapeHtml(form.healthAnswers?.[question.key] || "")}</strong>
               </div>`;
