@@ -118,17 +118,35 @@ const getStaffName = booking =>
   booking?.assistant?.full_name ||
   "-";
 
+const isGenericBookingTitle = title => {
+  const value = String(title || "").trim();
+  return !value || value === "حجز" || value === "موعد" || value.startsWith("messages.");
+};
+
 const getBookingTitle = booking => {
   const title = String(booking?.title || "").trim();
   if (title && !title.startsWith("messages.")) return title;
 
-  const serviceName = booking?.service?.name || "حجز";
+  const serviceName = booking?.service?.name;
   const patientName = booking?.patient?.full_name || booking?.patient_name;
   const time = getBookingTime(booking);
 
-  return [serviceName, patientName ? `للمريض ${patientName}` : "", time && time !== "-" ? `في ${time}` : ""]
+  return [serviceName || "موعد", patientName ? `للمريض ${patientName}` : "", time && time !== "-" ? `في ${time}` : ""]
     .filter(Boolean)
     .join(" ");
+};
+
+const getDayCardTitle = booking => {
+  if (!booking) return "";
+
+  const title = getBookingTitle(booking);
+  if (!isGenericBookingTitle(title)) return title;
+
+  const serviceName = booking?.service?.name;
+  const patientName = booking?.patient?.full_name || booking?.patient_name;
+  const time = getBookingTime(booking);
+
+  return [serviceName, patientName, time && time !== "-" ? time : ""].filter(Boolean).join(" • ") || "موعد";
 };
 
 const normalizeMonthBookings = payload => {
@@ -241,51 +259,59 @@ const BookingsAgenda = () => {
             <LoadingElement color="#29b4c3" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {monthDays.map(item => {
               const bookingCount = item.bookings.length;
               const hasBookings = bookingCount > 0;
-              const firstBooking = item.bookings[0];
+              const visibleBookings = item.bookings.slice(0, 2);
 
               return (
                 <button
                   type="button"
                   key={item.date}
                   onClick={() => setSelectedDay(item)}
-                  className={`group min-h-[128px] rounded-2xl border p-3 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${
-                    hasBookings ? "border-primary/20 bg-[#FBFEFF]" : "border-[#EFEFEF] bg-white"
+                  className={`group min-h-[118px] rounded-2xl border p-3.5 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md ${
+                    hasBookings ? "border-primary/25 bg-[#FBFEFF]" : "border-[#EFEFEF] bg-white"
                   }`}
                 >
-                  <div className="flex h-full flex-col justify-between gap-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F2FBFC] text-[0.9rem] font-bold text-primary">
-                        {item.day}
-                      </span>
+                  <div className="flex h-full flex-col gap-3">
+                    <div className="flex items-center justify-between gap-2 border-b border-[#EDF5F7] pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F2FBFC] text-[1rem] font-bold text-primary">
+                          {item.day}
+                        </span>
+                        <span className="text-[0.72rem] text-[#8A94A6]">{item.displayDate}</span>
+                      </div>
+
                       {hasBookings && (
-                        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-primary px-2 text-[0.75rem] font-bold text-white shadow-sm">
+                        <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-2 text-[0.78rem] font-bold text-white shadow-sm">
                           {bookingCount}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex min-h-[46px] flex-col justify-end gap-1.5">
+                    <div className="flex flex-1 flex-col justify-center gap-2">
                       {hasBookings ? (
                         <>
-                          <span
-                            title={getBookingTitle(firstBooking)}
-                            className="line-clamp-2 rounded-xl bg-[#F5F8FA] px-2.5 py-2 text-[0.68rem] leading-5 text-[#384250]"
-                          >
-                            {getBookingTitle(firstBooking)}
-                          </span>
-                          {bookingCount > 1 && (
-                            <span className="text-[0.65rem] font-medium text-primary">
-                              +{bookingCount - 1} حجوزات أخرى
+                          {visibleBookings.map((booking, index) => (
+                            <span
+                              key={booking?.id || index}
+                              title={getDayCardTitle(booking)}
+                              className="line-clamp-1 rounded-xl bg-[#F5F8FA] px-3 py-2 text-[0.72rem] leading-5 text-[#384250]"
+                            >
+                              {getDayCardTitle(booking)}
+                            </span>
+                          ))}
+
+                          {bookingCount > visibleBookings.length && (
+                            <span className="text-[0.68rem] font-medium text-primary">
+                              +{bookingCount - visibleBookings.length} مواعيد أخرى
                             </span>
                           )}
                         </>
                       ) : (
-                        <span className="rounded-xl bg-[#F8FAFC] px-2.5 py-2 text-center text-[0.68rem] text-[#9AA3AF]">
-                          لا توجد حجوزات
+                        <span className="rounded-xl bg-[#F8FAFC] px-3 py-2 text-center text-[0.72rem] text-[#9AA3AF]">
+                          لا توجد مواعيد
                         </span>
                       )}
                     </div>
