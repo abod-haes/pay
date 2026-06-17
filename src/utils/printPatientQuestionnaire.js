@@ -114,6 +114,8 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           border-radius: 14px;
           padding: 14px 22px 12px;
           box-shadow: 0 12px 34px rgba(41, 180, 195, 0.08);
+          display: flex;
+          flex-direction: column;
         }
         .header {
           display: flex;
@@ -121,6 +123,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           justify-content: space-between;
           gap: 28px;
           min-height: 70px;
+          flex: 0 0 auto;
         }
         .logo-block { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; padding-top: 0; }
         .logo-block img { width: 122px; max-height: 58px; object-fit: contain; display: block; }
@@ -133,18 +136,33 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           margin: 4px 0 12px;
           border-radius: 999px;
           background: linear-gradient(90deg, #29b4c3, #3b5a92);
+          flex: 0 0 auto;
+        }
+        .questionnaire-body {
+          flex: 1 1 auto;
+          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 12px;
         }
         .section {
           position: relative;
           border: 1.2px solid #d7e7ee;
           border-inline-start: 4px solid #29b4c3;
           border-radius: 13px;
-          padding: 13px 15px 10px;
-          margin-bottom: 8px;
+          padding: 16px 15px 13px;
+          margin: 0;
           background: #fff;
           break-inside: avoid;
           page-break-inside: avoid;
         }
+        .section.patient-section { min-height: 36mm; }
+        .section.sources-section { min-height: 18mm; }
+        .section.requests-section { min-height: 21mm; }
+        .section.medical-section { min-height: 28mm; }
+        .section.consultation-section { min-height: 31mm; }
+        .section.health-section { min-height: 50mm; }
         .section.soft { background: #fbfdfe; }
         .section-title {
           position: absolute;
@@ -160,23 +178,23 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           font-weight: 900;
           line-height: 1.25;
         }
-        .patient-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 18px; }
-        .line-field { display: flex; align-items: end; gap: 7px; min-height: 20px; }
+        .patient-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 20px; }
+        .line-field { display: flex; align-items: end; gap: 7px; min-height: 22px; }
         .line-field.wide { grid-column: span 2; }
         .line-label { white-space: nowrap; font-size: 9px; font-weight: 900; color: #3b5a92; line-height: 1.35; }
         .line-label::after { content: " :"; }
         .line-value {
           flex: 1;
-          min-height: 18px;
+          min-height: 20px;
           border-bottom: 1.1px dotted #9aa7b2;
           font-size: 9px;
           font-weight: 800;
           color: #333333;
-          padding: 0 5px 2px;
-          line-height: 1.35;
+          padding: 0 5px 3px;
+          line-height: 1.45;
         }
-        .options { display: flex; flex-wrap: wrap; gap: 7px 15px; align-items: center; padding: 0 2px; }
-        .requests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 20px; padding: 0 2px; }
+        .options { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 1px 2px; }
+        .requests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 22px; padding: 1px 2px; }
         .option-item {
           display: inline-flex;
           align-items: center;
@@ -185,7 +203,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           color: #333333;
           font-size: 9px;
           font-weight: 700;
-          line-height: 1.35;
+          line-height: 1.45;
         }
         .check-box {
           display: inline-flex;
@@ -203,9 +221,9 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           flex: 0 0 auto;
         }
         .check-box.checked { background: rgba(41, 180, 195, 0.12); }
-        .medical-lines { display: grid; gap: 5px; padding: 0 4px; }
-        .text-lines { display: grid; gap: 5px; padding-top: 0; }
-        .health-list { display: grid; gap: 3px; padding-top: 0; }
+        .medical-lines { display: grid; gap: 8px; padding: 2px 4px 0; }
+        .text-lines { display: grid; gap: 8px; padding-top: 0; }
+        .health-list { display: grid; gap: 6px; padding-top: 0; }
         .health-row {
           display: grid;
           grid-template-columns: 22px minmax(190px, 1fr) minmax(175px, 1.15fr);
@@ -214,7 +232,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           font-size: 9px;
           font-weight: 800;
           color: #333333;
-          line-height: 1.35;
+          line-height: 1.45;
         }
         .number-badge {
           display: inline-flex;
@@ -228,11 +246,11 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           font-weight: 900;
           background: #29b4c3;
         }
-        .line-answer { min-height: 18px; border-bottom: 1.1px dotted #9aa7b2; color: #333333; padding: 0 5px 2px; line-height: 1.35; }
+        .line-answer { min-height: 20px; border-bottom: 1.1px dotted #9aa7b2; color: #333333; padding: 0 5px 3px; line-height: 1.45; }
         .footer {
-          margin-top: 6px;
+          margin-top: 10px;
           border-top: 2.5px solid #29b4c3;
-          padding-top: 5px;
+          padding-top: 6px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -241,6 +259,7 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
           font-size: 8.8px;
           font-weight: 900;
           text-align: center;
+          flex: 0 0 auto;
         }
         .footer-pin { color: #29b4c3; font-size: 12px; line-height: 1; }
         @media print {
@@ -254,24 +273,33 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
             border-radius: 0;
             box-shadow: none;
             padding: 6mm 7mm 5mm;
+            display: flex;
+            flex-direction: column;
           }
-          .header { min-height: 63px; }
+          .header { min-height: 62px; }
           .logo-block img { width: 112px; max-height: 52px; }
           .logo-block span { font-size: 8px; }
           .top-lines { padding-top: 6px; font-size: 9px; }
           .top-line { margin-bottom: 6px; }
-          .brand-rule { margin: 3px 0 10px; }
-          .section { margin-bottom: 7px; padding: 12px 14px 9px; border-radius: 12px; }
+          .brand-rule { margin: 3px 0 8px; }
+          .questionnaire-body { flex: 1 1 auto; gap: 0; justify-content: space-between; }
+          .section { padding: 13px 14px 10px; border-radius: 12px; }
+          .section.patient-section { min-height: 35mm; }
+          .section.sources-section { min-height: 17mm; }
+          .section.requests-section { min-height: 21mm; }
+          .section.medical-section { min-height: 28mm; }
+          .section.consultation-section { min-height: 31mm; }
+          .section.health-section { min-height: 51mm; }
           .section-title { top: -10px; font-size: 8.8px; padding: 2px 10px; }
-          .patient-grid { gap: 7px 16px; }
-          .line-field { min-height: 19px; }
+          .patient-grid { gap: 8px 16px; }
+          .line-field { min-height: 21px; }
           .line-label, .line-value, .option-item, .health-row { font-size: 8.6px; }
-          .line-value, .line-answer { min-height: 17px; padding-bottom: 1px; }
-          .options { gap: 6px 13px; }
-          .requests { gap: 7px 17px; }
-          .medical-lines, .text-lines { gap: 4px; }
-          .health-list { gap: 2px; }
-          .footer { margin-top: 4px; padding-top: 4px; font-size: 8px; }
+          .line-value, .line-answer { min-height: 19px; padding-bottom: 2px; }
+          .options { gap: 7px 14px; }
+          .requests { gap: 9px 18px; }
+          .medical-lines, .text-lines { gap: 7px; }
+          .health-list { gap: 5px; }
+          .footer { margin-top: 6px; padding-top: 5px; font-size: 8px; }
         }
       </style>
     </head>
@@ -289,65 +317,67 @@ const buildQuestionnaireHtml = ({ patient = {}, form = {} }) => {
         </header>
         <div class="brand-rule"></div>
 
-        <section class="section">
-          <span class="section-title">معلومات المريض</span>
-          <div class="patient-grid">
-            ${renderLine({ label: "الاسم", value: patientName })}
-            ${renderLine({ label: "اسم الأب", value: patient?.father_name || "" })}
-            ${renderLine({ label: "اللقب", value: patient?.last_name || "" })}
-            ${renderLine({ label: "تاريخ الولادة", value: birthDate })}
-            ${renderLine({ label: "رقم الهوية", value: patient?.identity_number || patient?.id || "" })}
-            ${renderLine({ label: "العنوان", value: address, wide: true })}
-            ${renderLine({ label: "العمل", value: patient?.job || patient?.work || "" })}
-            ${renderLine({ label: "رقم الهاتف", value: phone || secondPhone, wide: true })}
-          </div>
-        </section>
+        <div class="questionnaire-body">
+          <section class="section patient-section">
+            <span class="section-title">معلومات المريض</span>
+            <div class="patient-grid">
+              ${renderLine({ label: "الاسم", value: patientName })}
+              ${renderLine({ label: "اسم الأب", value: patient?.father_name || "" })}
+              ${renderLine({ label: "اللقب", value: patient?.last_name || "" })}
+              ${renderLine({ label: "تاريخ الولادة", value: birthDate })}
+              ${renderLine({ label: "رقم الهوية", value: patient?.identity_number || patient?.id || "" })}
+              ${renderLine({ label: "العنوان", value: address, wide: true })}
+              ${renderLine({ label: "العمل", value: patient?.job || patient?.work || "" })}
+              ${renderLine({ label: "رقم الهاتف", value: phone || secondPhone, wide: true })}
+            </div>
+          </section>
 
-        <section class="section soft">
-          <span class="section-title">كيف تعرفت علينا؟</span>
-          <div class="options">${renderInlineOptions(
-            QUESTIONNAIRE_SOURCE_OPTIONS,
-            form.sources,
-            form.sourceOther
-          )}</div>
-        </section>
+          <section class="section soft sources-section">
+            <span class="section-title">كيف تعرفت علينا؟</span>
+            <div class="options">${renderInlineOptions(
+              QUESTIONNAIRE_SOURCE_OPTIONS,
+              form.sources,
+              form.sourceOther
+            )}</div>
+          </section>
 
-        <section class="section">
-          <span class="section-title">طلب</span>
-          <div class="requests">${renderInlineOptions(QUESTIONNAIRE_REQUEST_OPTIONS, form.requests)}</div>
-        </section>
+          <section class="section requests-section">
+            <span class="section-title">طلب</span>
+            <div class="requests">${renderInlineOptions(QUESTIONNAIRE_REQUEST_OPTIONS, form.requests)}</div>
+          </section>
 
-        <section class="section soft">
-          <span class="section-title">المعلومات الطبية</span>
-          <div class="medical-lines">
-            ${renderLine({ label: "سوابق لمرض أو عملية جراحية", value: form.medicalHistory })}
-            ${renderLine({ label: "الأدوية المستخدمة حالياً", value: form.currentMedications })}
-            ${renderLine({ label: "حساسية لبعض الأدوية", value: form.drugAllergy })}
-          </div>
-        </section>
+          <section class="section soft medical-section">
+            <span class="section-title">المعلومات الطبية</span>
+            <div class="medical-lines">
+              ${renderLine({ label: "سوابق لمرض أو عملية جراحية", value: form.medicalHistory })}
+              ${renderLine({ label: "الأدوية المستخدمة حالياً", value: form.currentMedications })}
+              ${renderLine({ label: "حساسية لبعض الأدوية", value: form.drugAllergy })}
+            </div>
+          </section>
 
-        <section class="section">
-          <span class="section-title">استشارة</span>
-          <div class="text-lines">
-            ${renderLine({ label: "", value: form.consultation, wide: true })}
-            ${renderLine({ label: "", value: "", wide: true })}
-            ${renderLine({ label: "", value: "", wide: true })}
-          </div>
-        </section>
+          <section class="section consultation-section">
+            <span class="section-title">استشارة</span>
+            <div class="text-lines">
+              ${renderLine({ label: "", value: form.consultation, wide: true })}
+              ${renderLine({ label: "", value: "", wide: true })}
+              ${renderLine({ label: "", value: "", wide: true })}
+            </div>
+          </section>
 
-        <section class="section soft">
-          <span class="section-title">أسئلة طبية</span>
-          <div class="health-list">
-            ${QUESTIONNAIRE_HEALTH_QUESTIONS.map((question, index) => {
-              const colors = ["#29b4c3", "#3b5a92"];
-              return `<div class="health-row">
-                <span class="number-badge" style="background:${colors[index % colors.length]}">${index + 1}</span>
-                <span>${escapeHtml(question.label)}</span>
-                <strong class="line-answer">${escapeHtml(form.healthAnswers?.[question.key] || "")}</strong>
-              </div>`;
-            }).join("")}
-          </div>
-        </section>
+          <section class="section soft health-section">
+            <span class="section-title">أسئلة طبية</span>
+            <div class="health-list">
+              ${QUESTIONNAIRE_HEALTH_QUESTIONS.map((question, index) => {
+                const colors = ["#29b4c3", "#3b5a92"];
+                return `<div class="health-row">
+                  <span class="number-badge" style="background:${colors[index % colors.length]}">${index + 1}</span>
+                  <span>${escapeHtml(question.label)}</span>
+                  <strong class="line-answer">${escapeHtml(form.healthAnswers?.[question.key] || "")}</strong>
+                </div>`;
+              }).join("")}
+            </div>
+          </section>
+        </div>
 
         <footer class="footer">
           <span class="footer-pin">⌖</span>
