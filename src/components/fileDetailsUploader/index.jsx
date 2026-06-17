@@ -12,6 +12,7 @@ const getToday = () => new Date().toISOString().split("T")[0];
 const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState("");
   const [fileDate, setFileDate] = useState(getToday());
@@ -30,7 +31,14 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
     "image/jpg",
     "image/gif",
     "image/webp",
+    "image/heic",
+    "image/heif",
   ];
+
+  const isAllowedFileType = file => {
+    if (!file?.type) return true;
+    return allowedTypes.includes(file.type) || file.type.startsWith("image/");
+  };
 
   if (readOnly) {
     return null;
@@ -71,11 +79,11 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
     }
 
     if (!selectedFile) {
-      showError("يرجى اختيار ملف");
+      showError("يرجى اختيار ملف أو التقاط صورة");
       return;
     }
 
-    if (!allowedTypes.includes(selectedFile.type)) {
+    if (!isAllowedFileType(selectedFile)) {
       showError(
         `${t("error.invalid-file-type")}\n${t(
           "error.allowed-types"
@@ -105,6 +113,10 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = "";
       }
     } catch (error) {
       showError(t("error.upload-failed"));
@@ -138,7 +150,7 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
               <div>
                 <h3 className="font-main text-[1.05rem] text-[#2F3747]">إضافة ملف جديد</h3>
                 <p className="mt-1 text-[0.72rem] text-[#9AA3AF]">
-                  اختر الملف وأدخل الاسم والتاريخ قبل الإضافة
+                  اختر ملفًا من الجهاز أو التقط صورة بالكاميرا
                 </p>
               </div>
               <button
@@ -167,19 +179,46 @@ const FileUploaderDetail = ({ id, refetch, readOnly = true }) => {
                   onChange={handleFileChange}
                   disabled={loading}
                 />
-                <button
-                  type="button"
-                  className="inline-flex flex-col items-center justify-center gap-2"
-                  onClick={() => fileInputRef.current?.click()}
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileChange}
                   disabled={loading}
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm">
-                    <img src={uploadIcon} alt="رفع ملف" className="h-6 w-6 opacity-70" />
-                  </span>
-                  <span className="font-main text-[0.82rem] text-[#2F3747]">اختيار ملف</span>
-                </button>
-                <p className="mt-2 text-[0.75rem] text-accent">
-                  {selectedFile?.name || "لم يتم اختيار ملف"}
+                />
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    className="flex flex-col items-center justify-center gap-2 rounded-[16px] border border-white bg-white p-4 shadow-sm transition hover:border-primary/40"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={loading}
+                  >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F8FAFC] shadow-sm">
+                      <img src={uploadIcon} alt="رفع ملف" className="h-6 w-6 opacity-70" />
+                    </span>
+                    <span className="font-main text-[0.82rem] text-[#2F3747]">اختيار ملف</span>
+                    <span className="text-[0.68rem] text-[#9AA3AF]">PDF, Word, Excel, Images</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="flex flex-col items-center justify-center gap-2 rounded-[16px] border border-white bg-white p-4 shadow-sm transition hover:border-primary/40"
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={loading}
+                  >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F8FAFC] text-[1.35rem] shadow-sm">
+                      📷
+                    </span>
+                    <span className="font-main text-[0.82rem] text-[#2F3747]">فتح الكاميرا</span>
+                    <span className="text-[0.68rem] text-[#9AA3AF]">التقاط صورة مباشرة</span>
+                  </button>
+                </div>
+
+                <p className="mt-4 text-[0.75rem] text-accent">
+                  {selectedFile?.name || "لم يتم اختيار ملف أو صورة"}
                 </p>
               </div>
 
