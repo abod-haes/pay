@@ -1,15 +1,16 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "@hooks/useTranslation";
 import { useLocation, useNavigate } from "react-router";
 import Portal from "@/components/portal";
 import logout from "@assets/svgs/common/logout.svg";
 import { getPageTitle } from "@/utils/navigationHelpers";
-import notification from "@/assets/svgs/common/notification.svg";
 import user from "@/assets/svgs/common/user.svg";
 import menuIcon from "@/assets/svgs/common/menu.svg";
 import { AuthApis } from "@/apis/auth/api";
 import { handleBackendErrors } from "@/utils/helpers";
 import global from "@assets/svgs/common/global.svg";
+import NotificationsBell from "@/components/notifications/notificationsBell";
+import { useNotificationsQueries } from "@/apis/notifications/query";
 
 export default function Navbar({ isSidebarOpen, shouldShowSidebarToggle, setIsSidebarOpen }) {
   const { t, i18n } = useTranslation();
@@ -17,6 +18,16 @@ export default function Navbar({ isSidebarOpen, shouldShowSidebarToggle, setIsSi
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { data: notificationGroups = [] } = useNotificationsQueries.GetAllNotifications();
+
+  const unreadNotificationsCount = useMemo(
+    () =>
+      notificationGroups.reduce(
+        (sum, group) => sum + (group.notifications || []).filter(item => !item.read_at).length,
+        0
+      ),
+    [notificationGroups]
+  );
 
   const toggleProfileDropdown = () => {
     setIsProfileDropdownOpen(!isProfileDropdownOpen);
@@ -180,18 +191,8 @@ export default function Navbar({ isSidebarOpen, shouldShowSidebarToggle, setIsSi
           )}
         </div>
 
-        <div className="relative">
-          <div
-            className="max-sm:w-[25px]  max-sm:h-[25px] w-[48px] h-[48px]  bg-gray-100 rounded-full flex justify-center items-center cursor-pointer"
-            onClick={() => {}}
-          >
-            <img
-              src={notification}
-              alt="language-toggle"
-              className="w-[20px] h-[20px] max-sm:w-[15px] max-sm:h-[15px] object-contain"
-            />
-          </div>
-        </div>
+        <NotificationsBell unreadCount={unreadNotificationsCount} />
+
         <div className="relative">
           <div
             className="max-sm:w-[25px]  max-sm:h-[25px] w-[48px] h-[48px]  bg-gray-100 rounded-full flex justify-center items-center cursor-pointer"
