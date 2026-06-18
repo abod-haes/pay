@@ -66,6 +66,17 @@ const agendaTexts = {
   },
 };
 
+const agendaTypeStyles = {
+  booking: {
+    chip: "border-[#35B779]/40 bg-[#E9F8F0] text-[#16794C]",
+    dot: "bg-[#35B779]",
+  },
+  examination: {
+    chip: "border-[#FBBF24]/50 bg-[#FFF7D6] text-[#9A6A00]",
+    dot: "bg-[#FBBF24]",
+  },
+};
+
 const getAgendaTexts = language => {
   const languageKey = String(language || "ar").split("-")[0];
   return agendaTexts[languageKey] || agendaTexts.ar;
@@ -194,11 +205,6 @@ const getStaffName = booking =>
   booking?.assistant?.full_name ||
   "-";
 
-const isGenericBookingTitle = title => {
-  const value = String(title || "").trim();
-  return !value || value === "حجز" || value === "موعد" || value.startsWith("messages.");
-};
-
 const getAgendaItemType = item => {
   if (item?.agendaType) return item.agendaType;
   if (item?.type === "examination" || item?.examination_id) return "examination";
@@ -208,13 +214,7 @@ const getAgendaItemType = item => {
 const getAgendaItemLabel = (item, texts) =>
   getAgendaItemType(item) === "examination" ? texts.examination : texts.booking;
 
-const getDayAgendaLabels = (items, texts) => {
-  const safeItems = Array.isArray(items) ? items : [];
-  const hasExamination = safeItems.some(item => getAgendaItemType(item) === "examination");
-  const hasBooking = safeItems.some(item => getAgendaItemType(item) === "booking");
-
-  return [hasExamination ? texts.examination : null, hasBooking ? texts.booking : null].filter(Boolean);
-};
+const getAgendaTypeStyle = item => agendaTypeStyles[getAgendaItemType(item)] || agendaTypeStyles.booking;
 
 const getBookingTitle = (booking, texts) => {
   const title = String(booking?.title || "").trim();
@@ -243,7 +243,7 @@ const normalizeMonthBookings = payload => {
     if (!dayNumber) return acc;
 
     // earliest-booking returns this shape:
-    // { date: "2026-06-01", booking: { id, title }, examination: null }
+    // { date: "2026-06-01", booking: { id, title, time }, examination: null }
     const earliestBookings = toArray(item?.booking).map(booking => ({
       ...booking,
       date: booking?.date || item?.date,
@@ -358,44 +358,58 @@ const BookingsAgenda = () => {
           </div>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-[#F8FAFC] px-3 py-2 text-[0.72rem] font-medium text-[#64748B]">
+          <span className="inline-flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-full ${agendaTypeStyles.examination.dot}`} />
+            {texts.examination}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-full ${agendaTypeStyles.booking.dot}`} />
+            {texts.booking}
+          </span>
+        </div>
+
         {isLoading ? (
           <div className="flex h-[260px] items-center justify-center">
             <LoadingElement color="#29b4c3" />
           </div>
         ) : monthDays.length ? (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
-            {monthDays.map(item => {
-              const dayLabels = getDayAgendaLabels(item.bookings, texts);
-              const labelsTitle = dayLabels.join(" / ");
+            {monthDays.map(item => (
+              <button
+                type="button"
+                key={item.date}
+                onClick={() => setSelectedDay(item)}
+                className="group flex min-h-[78px] flex-col rounded-[16px] border border-primary/20 bg-[#FBFEFF] p-2 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                title={item.displayDate}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[0.95rem] font-bold text-primary">
+                    {item.day}
+                  </span>
+                </div>
 
-              return (
-                <button
-                  type="button"
-                  key={item.date}
-                  onClick={() => setSelectedDay(item)}
-                  className="group flex min-h-[72px] flex-col rounded-[16px] border border-primary/20 bg-[#FBFEFF] p-2 text-start transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F2FBFC] text-[0.95rem] font-bold text-primary">
-                      {item.day}
-                    </span>
-                  </div>
+                <div className="mt-2 h-px w-full bg-[#EDF5F7]" />
 
-                  <div className="mt-2 h-px w-full bg-[#EDF5F7]" />
+                <div className="mt-2 flex flex-1 flex-wrap items-center justify-center gap-1.5">
+                  {item.bookings.map((agendaItem, index) => {
+                    const style = getAgendaTypeStyle(agendaItem);
+                    const label = getAgendaItemLabel(agendaItem, texts);
+                    const time = getBookingTime(agendaItem);
 
-                  <div className="mt-2 flex flex-1 flex-wrap items-center justify-center gap-1" title={labelsTitle}>
-                    {dayLabels.map(label => (
+                    return (
                       <span
-                        key={label}
-                        className="rounded-full bg-primary/10 px-2.5 py-1 text-[0.68rem] font-bold leading-none text-primary"
+                        key={`${getAgendaItemType(agendaItem)}-${agendaItem?.id || index}-${time}`}
+                        className={`rounded-full border px-2.5 py-1 text-[0.68rem] font-bold leading-none ${style.chip}`}
+                        title={label}
                       >
-                        {label}
+                        {time}
                       </span>
-                    ))}
-                  </div>
-                </button>
-              );
-            })}
+                    );
+                  })}
+                </div>
+              </button>
+            ))}
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-[#DDE7EA] py-10 text-center text-[0.8rem] text-[#7A8699]">
