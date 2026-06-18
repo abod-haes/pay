@@ -122,13 +122,14 @@ const parseBookingDate = value => {
     // If first number is greater than 12, it is definitely the day.
     const day = first > 12 ? first : second > 12 ? second : first;
     const month = first > 12 ? second : second > 12 ? first : second;
+    const isoDate = `${year}-${pad(month)}-${pad(day)}`;
 
     return {
       day,
       month,
       year,
-      apiDate: `${pad(day)}/${pad(month)}/${year}`,
-      isoDate: `${year}-${pad(month)}-${pad(day)}`,
+      apiDate: isoDate,
+      isoDate,
       displayDate: `${pad(day)}/${pad(month)}/${year}`,
       time: timePart || "",
     };
@@ -142,13 +143,14 @@ const parseBookingDate = value => {
     if (!day || !month || !year) return null;
 
     const cleanTime = isoTimePart.replace("Z", "").split(".")[0];
+    const isoDate = `${year}-${pad(month)}-${pad(day)}`;
 
     return {
       day,
       month,
       year,
-      apiDate: `${pad(day)}/${pad(month)}/${year}`,
-      isoDate: `${year}-${pad(month)}-${pad(day)}`,
+      apiDate: isoDate,
+      isoDate,
       displayDate: `${pad(day)}/${pad(month)}/${year}`,
       time: cleanTime || "",
     };
@@ -295,11 +297,12 @@ const BookingsAgenda = () => {
         .map(([dayKey, bookings]) => {
           const day = Number(dayKey);
           const parsedDate = parseBookingDate(bookings?.[0]?.date);
+          const isoDate = parsedDate?.isoDate || `${year}-${pad(month)}-${pad(day)}`;
 
           return {
             day,
-            date: parsedDate?.isoDate || `${year}-${pad(month)}-${pad(day)}`,
-            apiDate: parsedDate?.apiDate || `${pad(day)}/${pad(month)}/${year}`,
+            date: isoDate,
+            apiDate: isoDate,
             displayDate: parsedDate?.displayDate || `${pad(day)}/${pad(month)}/${year}`,
             bookings,
           };
