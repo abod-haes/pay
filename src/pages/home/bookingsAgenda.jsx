@@ -12,9 +12,9 @@ const agendaTexts = {
     previous: "السابق",
     next: "التالي",
     noMonthAppointments: "لا توجد مواعيد لهذا الشهر",
-    dayBookingsTitle: "حجوزات يوم {{date}}",
+    dayBookingsTitle: "مواعيد يوم {{date}}",
     close: "إغلاق",
-    noDayBookings: "لا توجد حجوزات في هذا اليوم",
+    noDayBookings: "لا توجد مواعيد في هذا اليوم",
     booking: "حجز",
     examination: "معاينة",
     appointment: "موعد",
@@ -31,9 +31,9 @@ const agendaTexts = {
     previous: "Previous",
     next: "Next",
     noMonthAppointments: "No appointments this month",
-    dayBookingsTitle: "Bookings for {{date}}",
+    dayBookingsTitle: "Appointments for {{date}}",
     close: "Close",
-    noDayBookings: "No bookings on this day",
+    noDayBookings: "No appointments on this day",
     booking: "Booking",
     examination: "Examination",
     appointment: "Appointment",
@@ -50,9 +50,9 @@ const agendaTexts = {
     previous: "قبلی",
     next: "بعدی",
     noMonthAppointments: "در این ماه هیچ نوبتی وجود ندارد",
-    dayBookingsTitle: "رزروهای روز {{date}}",
+    dayBookingsTitle: "نوبت‌های روز {{date}}",
     close: "بستن",
-    noDayBookings: "در این روز رزروی وجود ندارد",
+    noDayBookings: "در این روز هیچ نوبتی وجود ندارد",
     booking: "رزرو",
     examination: "معاینه",
     appointment: "نوبت",
@@ -272,7 +272,27 @@ const normalizeMonthBookings = payload => {
   }, {});
 };
 
-const normalizeDayBookings = payload => getPayloadArray(payload);
+const normalizeDayBookings = payload => {
+  const source = payload?.data?.data || payload?.data || payload?.result || payload;
+
+  const bookings = toArray(source?.booking || source?.bookings).map(booking => ({
+    ...booking,
+    agendaType: "booking",
+  }));
+  const examinations = toArray(source?.examination || source?.examinations).map(examination => ({
+    ...examination,
+    agendaType: "examination",
+  }));
+
+  if (bookings.length || examinations.length) {
+    return [...bookings, ...examinations];
+  }
+
+  return getPayloadArray(payload).map(item => ({
+    ...item,
+    agendaType: getAgendaItemType(item),
+  }));
+};
 
 const BookingsAgenda = () => {
   const { i18n } = useTranslation();
@@ -440,25 +460,35 @@ const BookingsAgenda = () => {
               </div>
             ) : selectedDayBookings.length ? (
               <div className="flex max-h-[420px] flex-col gap-3 overflow-y-auto">
-                {selectedDayBookings.map((booking, index) => (
-                  <div
-                    key={booking?.id || index}
-                    className="rounded-xl border border-[#EFEFEF] p-4 text-[0.8rem]"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <p className="font-bold text-[#333]">{getBookingTitle(booking, texts)}</p>
-                      <span className="rounded-full bg-[#FFF8E1] px-3 py-1 text-[0.7rem] text-[#8A6D00]">
-                        {getBookingStatus(booking)}
-                      </span>
+                {selectedDayBookings.map((booking, index) => {
+                  const style = getAgendaTypeStyle(booking);
+                  const typeLabel = getAgendaItemLabel(booking, texts);
+
+                  return (
+                    <div
+                      key={`${getAgendaItemType(booking)}-${booking?.id || index}`}
+                      className="rounded-xl border border-[#EFEFEF] p-4 text-[0.8rem]"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <p className="font-bold text-[#333]">{getBookingTitle(booking, texts)}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full border px-3 py-1 text-[0.7rem] font-bold ${style.chip}`}>
+                            {typeLabel}
+                          </span>
+                          <span className="rounded-full bg-[#FFF8E1] px-3 py-1 text-[0.7rem] text-[#8A6D00]">
+                            {getBookingStatus(booking)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-2 text-[#6B7280] md:grid-cols-2">
+                        <span>{texts.patient}: {booking?.patient?.full_name || booking?.patient_name || "-"}</span>
+                        <span>{texts.time}: {getBookingTime(booking)}</span>
+                        <span>{texts.service}: {booking?.service?.name || "-"}</span>
+                        <span>{texts.employee}: {getStaffName(booking)}</span>
+                      </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-1 gap-2 text-[#6B7280] md:grid-cols-2">
-                      <span>{texts.patient}: {booking?.patient?.full_name || booking?.patient_name || "-"}</span>
-                      <span>{texts.time}: {getBookingTime(booking)}</span>
-                      <span>{texts.service}: {booking?.service?.name || "-"}</span>
-                      <span>{texts.employee}: {getStaffName(booking)}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="py-10 text-center text-[#6B7280]">{texts.noDayBookings}</p>
