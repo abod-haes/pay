@@ -25,6 +25,29 @@ const agendaTexts = {
     employee: "الموظف",
     forPatient: "للمريض",
     atTime: "في",
+    statuses: {
+      wait: "انتظار",
+      waiting: "انتظار",
+      pending: "قيد الانتظار",
+      confirmed: "مؤكد",
+      approved: "موافق عليه",
+      approve: "موافق عليه",
+      rejected: "مرفوض",
+      canceled: "ملغى",
+      cancelled: "ملغى",
+      completed: "مكتمل",
+      complete: "مكتمل",
+      done: "منجز",
+      finished: "منتهي",
+      attended: "حضر",
+      attendance: "حضر",
+      not_attended: "لم يحضر",
+      no_show: "لم يحضر",
+      absent: "غائب",
+      postponed: "مؤجل",
+      delayed: "مؤجل",
+      in_progress: "قيد التنفيذ",
+    },
   },
   en: {
     title: "Agenda",
@@ -44,6 +67,29 @@ const agendaTexts = {
     employee: "Employee",
     forPatient: "for patient",
     atTime: "at",
+    statuses: {
+      wait: "Waiting",
+      waiting: "Waiting",
+      pending: "Pending",
+      confirmed: "Confirmed",
+      approved: "Approved",
+      approve: "Approved",
+      rejected: "Rejected",
+      canceled: "Canceled",
+      cancelled: "Cancelled",
+      completed: "Completed",
+      complete: "Completed",
+      done: "Done",
+      finished: "Finished",
+      attended: "Attended",
+      attendance: "Attended",
+      not_attended: "Not attended",
+      no_show: "No show",
+      absent: "Absent",
+      postponed: "Postponed",
+      delayed: "Delayed",
+      in_progress: "In progress",
+    },
   },
   fa: {
     title: "برنامه کاری",
@@ -63,6 +109,29 @@ const agendaTexts = {
     employee: "کارمند",
     forPatient: "برای بیمار",
     atTime: "در ساعت",
+    statuses: {
+      wait: "در انتظار",
+      waiting: "در انتظار",
+      pending: "در حال انتظار",
+      confirmed: "تأیید شده",
+      approved: "تأیید شده",
+      approve: "تأیید شده",
+      rejected: "رد شده",
+      canceled: "لغو شده",
+      cancelled: "لغو شده",
+      completed: "تکمیل شده",
+      complete: "تکمیل شده",
+      done: "انجام شده",
+      finished: "پایان یافته",
+      attended: "حاضر شد",
+      attendance: "حاضر شد",
+      not_attended: "حاضر نشد",
+      no_show: "حاضر نشد",
+      absent: "غایب",
+      postponed: "به تعویق افتاده",
+      delayed: "به تعویق افتاده",
+      in_progress: "در حال انجام",
+    },
   },
 };
 
@@ -194,8 +263,17 @@ const getBookingTime = booking => {
   return booking?.time || dateMeta?.time || "-";
 };
 
-const getBookingStatus = booking => {
-  return booking?.booking_status?.name || booking?.status?.name || booking?.status || "-";
+const normalizeStatusKey = status =>
+  String(status || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+const getBookingStatus = (booking, texts) => {
+  const rawStatus = booking?.booking_status?.name || booking?.status?.name || booking?.status || "-";
+  const statusKey = normalizeStatusKey(rawStatus);
+
+  return texts.statuses?.[statusKey] || rawStatus || "-";
 };
 
 const getStaffName = booking =>
@@ -476,7 +554,7 @@ const BookingsAgenda = () => {
                             {typeLabel}
                           </span>
                           <span className="rounded-full bg-[#FFF8E1] px-3 py-1 text-[0.7rem] text-[#8A6D00]">
-                            {getBookingStatus(booking)}
+                            {getBookingStatus(booking, texts)}
                           </span>
                         </div>
                       </div>
