@@ -132,14 +132,7 @@ export default function AddPatient() {
         value: yup.string().required(t("validation.required")),
       })
       .required(t("validation.required")),
-    employee_id: yup
-      .object()
-
-      .shape({
-        label: yup.string().required(t("validation.required")),
-        value: yup.string().required(t("validation.required")),
-      })
-      .required(t("validation.required")),
+    employee_id: yup.mixed().nullable().notRequired(),
   });
   const { bookingVia } = useBookingVia();
   const genderOptions = [
@@ -251,10 +244,12 @@ export default function AddPatient() {
             value: dataToReset.city.id,
           }
           : null,
-        employee_id: {
-          label: dataToReset?.employee?.full_name,
-          value: dataToReset?.employee?.id,
-        },
+        employee_id: dataToReset?.employee
+          ? {
+            label: dataToReset.employee.full_name,
+            value: dataToReset.employee.id,
+          }
+          : null,
         address: dataToReset.address,
         first_phone_number: dataToReset.first_phone_number,
         second_phone_number: dataToReset.second_phone_number || "",
@@ -299,7 +294,7 @@ export default function AddPatient() {
         city_id: data.city_id.value,
         country: data.country.value,
         address: data.address,
-        employee_id: data?.employee_id?.value,
+        ...(data?.employee_id?.value ? { employee_id: data.employee_id.value } : {}),
         first_phone_number: data.first_phone_number,
         // first_phone_number_country_code: data.first_phone_number_country_code,
         booking_via: data.booking_via.value,
