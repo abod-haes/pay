@@ -4,7 +4,7 @@ import BranchesTable from "@/components/table/table";
 import { branchesActions, initialValues, branchesReducer } from "@/reducers/branches";
 import { useMemo, useReducer } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
   encryptId,
   handleBackendErrors,
@@ -24,10 +24,36 @@ import { Can } from "@/components/shared/can/can";
 import { PERMISSION_ACTION, PERMISSION_GROUP } from "@/constants/constants";
 import DropdownMenu from "@/components/shared/dropdownMenu";
 
+const isTruthy = value => value === true || value === 1 || value === "1" || value === "true";
+
+const getAuthData = () => {
+  try {
+    const authString = localStorage.getItem("authData") || sessionStorage.getItem("authData");
+    return authString ? JSON.parse(authString) : null;
+  } catch {
+    return null;
+  }
+};
+
+const isAuthBranchMain = () => {
+  const authData = getAuthData();
+  const branch = authData?.user?.branch || authData?.branch;
+
+  return isTruthy(branch?.is_main ?? authData?.user?.branch_is_main ?? authData?.user?.is_main_branch);
+};
+
+const canAccessBranchesManagement = () =>
+  isAuthBranchMain() &&
+  hasPermissionFunction({
+    group: PERMISSION_GROUP.Branch,
+    type: PERMISSION_ACTION.index,
+  });
+
 const Branches = () => {
   const { t, i18n } = useTranslation();
   const [state, dispatch] = useReducer(branchesReducer, initialValues);
   const navigate = useNavigate();
+  const canViewBranches = canAccessBranchesManagement();
 
   const { control, watch, reset } = useForm({ defaultValues: { name: "", address: "" } });
 
@@ -37,6 +63,7 @@ const Branches = () => {
     search: state.searchValue,
     name: watch("name"),
     address: watch("address"),
+    enabled: canViewBranches,
   });
 
   const rowData = useMemo(
@@ -164,10 +191,9 @@ const Branches = () => {
     },
   ];
 
-  const userData = localStorage.getItem("authData");
-  const jonsAuth = JSON.parse(userData);
+  const authData = getAuthData();
   const branch_id = localStorage.getItem("branch_id");
-  const jonsBranch_id = JSON.parse(branch_id);
+  const jonsBranch_id = branch_id ? JSON.parse(branch_id) : null;
 
   const extraActions = row => {
     const menuItems = [
@@ -175,19 +201,18 @@ const Branches = () => {
         label: t("common.display"),
         icon: <img src={eye} alt="show" />,
         onClick: () => handleShow(row),
-        show: hasPermissionFunction({
-          group: PERMISSION_GROUP.Branch,
-          type: PERMISSION_ACTION.index,
-        }),
+        show: canViewBranches,
       },
       {
         label: t("common.edit"),
         icon: <img src={edit2} alt="edit" />,
         onClick: () => handleEdit(row),
-        show: hasPermissionFunction({
-          group: PERMISSION_GROUP.Branch,
-          type: PERMISSION_ACTION.update,
-        }),
+        show:
+          canViewBranches &&
+          hasPermissionFunction({
+            group: PERMISSION_GROUP.Branch,
+            type: PERMISSION_ACTION.update,
+          }),
       },
       {
         label: t("common.delete"),
@@ -196,10 +221,12 @@ const Branches = () => {
           dispatch({ type: branchesActions.openDeleteModal, payload: true });
           dispatch({ type: branchesActions.selectedId, payload: row.id });
         },
-        show: hasPermissionFunction({
-          group: PERMISSION_GROUP.Branch,
-          type: PERMISSION_ACTION.delete,
-        }),
+        show:
+          canViewBranches &&
+          hasPermissionFunction({
+            group: PERMISSION_GROUP.Branch,
+            type: PERMISSION_ACTION.delete,
+          }),
       },
       {
         label: t("branches.impersonation"),
@@ -208,13 +235,17 @@ const Branches = () => {
           localStorage.setItem("branch_id", JSON.stringify(row));
           navigate("/homePage");
         },
-        show: jonsAuth?.user?.id !== row?.id && jonsBranch_id?.id !== row?.id,
+        show: canViewBranches && authData?.user?.id !== row?.id && jonsBranch_id?.id !== row?.id,
       },
     ];
     return (
       <DropdownMenu items={menuItems} position="bottom-left" className="employee-actions-menu" />
     );
   };
+
+  if (!canViewBranches) {
+    return <Navigate to="/homepage" replace />;
+  }
 
   return (
     <>
