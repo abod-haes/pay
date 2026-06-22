@@ -21,7 +21,6 @@ import SelectField from "@/components/shared/select";
 import { useBranchesQueries } from "@/apis/branches/query";
 import LoadingSection from "@/components/loadingSection";
 import { apis } from "@/apis/branches/api";
-import useCities from "@/hooks/useCities";
 import useStates from "@/hooks/useStates";
 import PhoneNumber from "@/components/phoneNumber";
 import { getCountries, getCountryCallingCode } from "react-phone-number-input";
@@ -32,6 +31,8 @@ export const getCountryByCallingCode = code => {
 };
 // eslint-disable-next-line complexity
 function resetFormFields(reset, dataToReset) {
+  const defaultUser = dataToReset?.default_user || {};
+
   reset({
     state_id: { label: dataToReset?.state?.name, value: dataToReset?.state?.id },
     notes: dataToReset?.notes,
@@ -39,6 +40,9 @@ function resetFormFields(reset, dataToReset) {
     phone_number: dataToReset?.phone_number,
     name: dataToReset?.name,
     country_code: dataToReset?.country_code,
+    username: defaultUser?.username || "",
+    email: defaultUser?.email || "",
+    password: "",
   });
 }
 
@@ -63,6 +67,13 @@ const AddBranch = () => {
   const validationSchema = yup.object().shape({
     name: yup.string().required(t("validation.required")),
     phone_number: yup.string().required(t("validation.required")),
+    username: isAdd
+      ? yup.string().required(t("validation.required"))
+      : yup.string().nullable().notRequired(),
+    password: isAdd
+      ? yup.string().required(t("validation.required"))
+      : yup.string().nullable().notRequired(),
+    email: yup.string().nullable().notRequired(),
     notes: yup.string().nullable(),
     address: yup.string().nullable(),
     state_id: yup
@@ -90,6 +101,9 @@ const AddBranch = () => {
       notes: "",
       state_id: null,
       country_code: "964",
+      username: "",
+      password: "",
+      email: "",
     },
     resolver: yupResolver(validationSchema),
   });
@@ -122,17 +136,21 @@ const AddBranch = () => {
         state_id: data.state_id.value,
         phone_number: data.phone_number,
         country_code: data.country_code || null,
+        ...(isAdd
+          ? {
+              username: data.username,
+              password: data.password,
+            }
+          : {}),
       };
-      if (isEdit) {
-        clearErrors();
-        if (!isAdd) {
-          const response = await apis.update({ id, payload: dataToSend });
-          showSuccess(response?.data.message);
-        } else {
-          const response = await apis.add({ id, payload: dataToSend });
-          showSuccess(response?.data.message);
-        }
-      }
+
+      clearErrors();
+
+      const response = isEdit
+        ? await apis.update({ id, payload: dataToSend })
+        : await apis.add({ payload: dataToSend });
+
+      showSuccess(response?.data.message);
       navigate(-1);
     } catch (error) {
       handleBackendErrors({ error, setError });
@@ -169,8 +187,6 @@ const AddBranch = () => {
     },
   ];
 
-  console.log("err", errors);
-
   return (
     <div>
       <BreadCrumb isAdd title={TITLE} link="/branches" />
@@ -197,6 +213,45 @@ const AddBranch = () => {
                 register={register}
                 errors={errors.phone_number?.message}
               />
+            )}
+
+            {isAdd && (
+              <>
+                <Input
+                  name="username"
+                  control={control}
+                  placeholder={t("common.user")}
+                  error={errors?.username?.message}
+                  autoComplete="username"
+                />
+                <Input
+                  name="password"
+                  control={control}
+                  placeholder={t("common.password")}
+                  error={errors?.password?.message}
+                  type="password"
+                  autoComplete="new-password"
+                />
+              </>
+            )}
+
+            {isShow && (
+              <>
+                <Input
+                  name="username"
+                  control={control}
+                  placeholder={t("common.user")}
+                  error={errors?.username?.message}
+                  disable
+                />
+                <Input
+                  name="email"
+                  control={control}
+                  placeholder={t("common.email")}
+                  error={errors?.email?.message}
+                  disable
+                />
+              </>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
