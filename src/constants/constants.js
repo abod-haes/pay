@@ -142,6 +142,7 @@ export const PERMISSION_ACTION = {
   change_status: "change_status",
   assign_doctor: "assign_doctor",
   assign_technician: "assign_technician",
+  assign_admin: "assign_admin",
   change_status_to_in_progress: "in_progress",
   change_status_to_done: "approve",
   pay: "pay",
