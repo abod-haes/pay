@@ -53,13 +53,8 @@ const AddBranch = () => {
   const location = useLocation();
   const query = new URLSearchParams(location.search);
 
-  // حالة إضافة
   const isAdd = location.pathname.endsWith("/add");
-
-  // حالة عرض
   const isShow = Boolean(query.get("show") === "true");
-
-  // حالة تعديل
   const id = encryptedId ? decryptId(encryptedId) : null;
   const isEdit = Boolean(id) && !isShow;
   const { data, isLoading } = useBranchesQueries.GetOne({ id });
@@ -108,6 +103,7 @@ const AddBranch = () => {
     resolver: yupResolver(validationSchema),
   });
   const [phoneNumberReady, setPhoneNumberReady] = useState(false);
+
   useEffect(() => {
     if ((isEdit || isShow) && id && !isAdd) {
       const dataToReset = data?.data?.data;
@@ -120,6 +116,7 @@ const AddBranch = () => {
       setPhoneNumberReady(true);
     }
   }, [id, isAdd, isEdit, isShow, data?.data, reset]);
+
   useEffect(() => {
     if ((isEdit || isShow) && id && !isAdd) {
       const dataToReset = data?.data?.data;
@@ -174,7 +171,6 @@ const AddBranch = () => {
       show: !isShow,
       component: (
         <PrimaryButton
-          // text={isAdd ? t("common.save") : t("common.add")}
           text={isAdd ? t("common.add") : t("common.save_changes")}
           type="submit"
           isSubmitting={isSubmitting}
@@ -199,8 +195,7 @@ const AddBranch = () => {
               control={control}
               placeholder={t("branches.branch-name")}
               error={errors?.name?.message}
-              // rules={{ required: t("validation.required") }}
-              disabled={isShow}
+              disable={isShow}
             />
 
             {phoneNumberReady && (
@@ -212,6 +207,7 @@ const AddBranch = () => {
                 placeholder={t("common.phone-number")}
                 register={register}
                 errors={errors.phone_number?.message}
+                disable={isShow}
               />
             )}
 
@@ -269,7 +265,7 @@ const AddBranch = () => {
               {...register("address")}
               placeholder={t("common.address")}
               rows={1}
-              disabled={isShow}
+              disable={isShow}
               error={errors?.address?.message}
             />
           </div>
@@ -279,7 +275,7 @@ const AddBranch = () => {
             placeholder={t("common.notes")}
             rows={3}
             variant="white"
-            disabled={isShow}
+            disable={isShow}
           />
 
           <CustomFlexButtons
