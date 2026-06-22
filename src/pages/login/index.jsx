@@ -344,12 +344,6 @@ export default function Login() {
             />
           )}
 
-          {loginStep === LOGIN_STEP.PASSWORD && watch("branch") && (
-            <div className="rounded-[4px] bg-primary/5 border border-primary/20 px-3 py-2 text-[0.8rem] text-secondary">
-              {watch("branch")?.label}
-            </div>
-          )}
-
           {loginStep === LOGIN_STEP.PASSWORD && (
             <Input
               name="password"

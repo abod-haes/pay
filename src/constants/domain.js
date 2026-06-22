@@ -1,8 +1,8 @@
 //import env from "./env";
 const DEVELOPMENT_BASE_URL = "https://paydar.scentworld.net/public/api/";
 
-// const PRODUCTION_BASE_URL = "https://baydar-iq.com/back/public/api/";
-const PRODUCTION_BASE_URL = "https://paydar.scentworld.net/public/api/";
+const PRODUCTION_BASE_URL = "https://baydar-iq.com/back/public/api/";
+// const PRODUCTION_BASE_URL = "https://paydar.scentworld.net/public/api/";
 // ("https://baydar-iq.com/public/api/");
 
 const DEVELOPMENT_API_BASE_URL = `${DEVELOPMENT_BASE_URL}`;
