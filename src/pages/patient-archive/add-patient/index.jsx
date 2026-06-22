@@ -27,16 +27,18 @@ import LoadingSection from "@/components/loadingSection";
 import { apis } from "@/apis/patients/api";
 import {
   decryptId,
-  encryptId,
-  formatDate,
   formatDateOrTime,
+  getUserData,
   handleBackendErrors,
+  hasPermissionFunction,
+  isEmployee,
+  isSuperAdmin,
 } from "@/utils/helpers";
 import useBookingVia from "@/hooks/useBookingia";
 import PhoneNumber from "@/components/phoneNumber";
 import { getCountries, getCountryCallingCode } from "react-phone-number-input";
-import { getUserData, isSuperAdmin, isEmployee } from "@/utils/helpers";
 import useEmployees from "@/hooks/useEmployess";
+import { PERMISSION_ACTION, PERMISSION_GROUP } from "@/constants/constants";
 
 export const getCountryByCallingCode = code => {
   const countries = getCountries();
@@ -61,7 +63,7 @@ export default function AddPatient() {
   const { isLoadingEmployees2, items: employees2 } = useEmployees({ type: "employee" });
   const [currentUser, setCurrentUser] = useState(null);
   const [isEmployeeUser, setIsEmployeeUser] = useState(false);
-  const [isUserSuperAdmin, setUserSuperAdmin] = useState(false);
+  const [isUserSuperAdmin, setUserSuperAdmin] = useState(isSuperAdmin());
 
   useEffect(() => {
     const userData = getUserData();
@@ -73,6 +75,13 @@ export default function AddPatient() {
     setCurrentUser(userData?.user || null);
     setUserSuperAdmin(isSuperAdmin());
   }, []);
+
+  const canAssignAdminToPatient =
+    isUserSuperAdmin ||
+    hasPermissionFunction({
+      group: PERMISSION_GROUP.Patient,
+      type: PERMISSION_ACTION.assign_admin,
+    });
 
   const currentUserEmployeeOption = currentUser
     ? {
@@ -284,6 +293,15 @@ export default function AddPatient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, id, data?.data?.data, isRefetching, isLoading]);
 
+  useEffect(() => {
+    if (!canAssignAdminToPatient && watch("employee_id")) {
+      setValue("employee_id", null, {
+        shouldDirty: true,
+        shouldValidate: false,
+      });
+    }
+  }, [canAssignAdminToPatient, setValue, watch]);
+
   const onSubmit = async data => {
     try {
       const dataToSend = {
@@ -294,7 +312,9 @@ export default function AddPatient() {
         city_id: data.city_id.value,
         country: data.country.value,
         address: data.address,
-        ...(data?.employee_id?.value ? { employee_id: data.employee_id.value } : {}),
+        ...(canAssignAdminToPatient && data?.employee_id?.value
+          ? { employee_id: data.employee_id.value }
+          : {}),
         first_phone_number: data.first_phone_number,
         // first_phone_number_country_code: data.first_phone_number_country_code,
         booking_via: data.booking_via.value,
@@ -347,7 +367,7 @@ export default function AddPatient() {
     { component: <SecondaryButton text={t("common.cancel2")} onClick={handleCancel} /> },
   ];
   useEffect(() => {
-    if (isEmployeeUser && currentUserEmployeeOption) {
+    if (canAssignAdminToPatient && isEmployeeUser && currentUserEmployeeOption) {
       const currentValue = watch("employee_id");
 
       if (!currentValue || currentValue.value !== currentUserEmployeeOption.value) {
@@ -357,7 +377,7 @@ export default function AddPatient() {
         });
       }
     }
-  }, [isEmployeeUser, currentUserEmployeeOption, setValue, watch]);
+  }, [canAssignAdminToPatient, isEmployeeUser, currentUserEmployeeOption, setValue, watch]);
 
   return (
     <div>
@@ -474,15 +494,17 @@ export default function AddPatient() {
               placeholder={t("booking.booked-by")}
               error={errors.booking_via?.message}
             />
-            <SelectField
-              name="employee_id"
-              control={control}
-              options={employeeOptions}
-              placeholder={t("surgeries.admin-name")}
-              loading={isLoadingEmployees2}
-              error={errors.employee_id?.message || errors.employee_id?.value?.message}
-              isDisabled={isEmployeeUser}
-            />
+            {canAssignAdminToPatient && (
+              <SelectField
+                name="employee_id"
+                control={control}
+                options={employeeOptions}
+                placeholder={t("surgeries.admin-name")}
+                loading={isLoadingEmployees2}
+                error={errors.employee_id?.message || errors.employee_id?.value?.message}
+                isDisabled={isEmployeeUser}
+              />
+            )}
           </div>
           <div className="w-full">
             <MedicalInformation
