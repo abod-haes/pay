@@ -286,7 +286,7 @@ export default function Login() {
     }
 
     if (loginStep === LOGIN_STEP.BRANCH) {
-      return t("common.save", { defaultValue: "متابعة" });
+      return t("login.continue", { defaultValue: "متابعة" });
     }
 
     return t("login.login");
