@@ -41,16 +41,22 @@ const Branches = () => {
 
   const rowData = useMemo(
     () =>
-      data?.data?.map((item, index) => ({
-        id: item.id,
-        id_show: index + 1 + (state.pageIndex - 1) * state.pageSize,
-        branchName: truncateText({ text: item.name, maxLength: 5 }) || "-",
-        address: truncateText({ text: item.address, maxLength: 5 }) || "-",
-        notes: truncateText({ text: item.notes, maxLength: 5 }) || "-",
-        url: truncateText({ text: item.domain_name, maxLength: 5 }) || "-",
-        phone: item.phone_number,
-        country_code: item?.country_code,
-      })) || [],
+      data?.data?.map((item, index) => {
+        const defaultUser = item?.default_user || {};
+
+        return {
+          id: item.id,
+          id_show: index + 1 + (state.pageIndex - 1) * state.pageSize,
+          branchName: truncateText({ text: item.name, maxLength: 5 }) || "-",
+          address: truncateText({ text: item.address, maxLength: 5 }) || "-",
+          notes: truncateText({ text: item.notes, maxLength: 5 }) || "-",
+          url: truncateText({ text: item.domain_name, maxLength: 5 }) || "-",
+          username: truncateText({ text: defaultUser?.username, maxLength: 18 }) || "-",
+          email: truncateText({ text: defaultUser?.email, maxLength: 24 }) || "-",
+          phone: item.phone_number,
+          country_code: item?.country_code,
+        };
+      }) || [],
     [data?.data]
   );
 
@@ -58,6 +64,8 @@ const Branches = () => {
     () => [
       { accessorKey: "id_show", header: "#" },
       { accessorKey: "branchName", header: t("branches.branch-name") },
+      { accessorKey: "username", header: t("common.user") },
+      { accessorKey: "email", header: t("common.email") },
       { accessorKey: "address", header: t("common.address") },
       { accessorKey: "url", header: t("branches.url") },
       {
@@ -83,7 +91,7 @@ const Branches = () => {
       },
       { accessorKey: "notes", header: t("common.notes") },
     ],
-    []
+    [i18n.language, t]
   );
 
   // ✅ Handlers
@@ -103,6 +111,7 @@ const Branches = () => {
     dispatch({ type: branchesActions.pageIndex, payload: page });
   };
 
+  const handleShow = row => navigate(`/branches/${encryptId(row.id)}?show=true`);
   const handleEdit = row => navigate(`/branches/${encryptId(row.id)}`);
   const handleDelete = row => {
     dispatch({ type: branchesActions.openDeleteModal, payload: true });
@@ -162,6 +171,15 @@ const Branches = () => {
 
   const extraActions = row => {
     const menuItems = [
+      {
+        label: t("common.display"),
+        icon: <img src={eye} alt="show" />,
+        onClick: () => handleShow(row),
+        show: hasPermissionFunction({
+          group: PERMISSION_GROUP.Branch,
+          type: PERMISSION_ACTION.index,
+        }),
+      },
       {
         label: t("common.edit"),
         icon: <img src={edit2} alt="edit" />,
