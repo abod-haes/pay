@@ -6,6 +6,11 @@ const login = async payload => {
   return data;
 };
 
+const checkEmail = async payload => {
+  const { data } = await ApiInstance.post(ROUTES.CHECK_EMAIL, payload);
+  return data;
+};
+
 const logout = async () => {
   const { data } = await ApiInstance.post(ROUTES.LOGOUT);
   return data;
@@ -16,4 +21,4 @@ const Me = async () => {
   return data;
 };
 
-export const AuthApis = { login, Me, logout };
+export const AuthApis = { login, checkEmail, Me, logout };
