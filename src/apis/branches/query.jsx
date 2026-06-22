@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { apis } from "./api";
 
-const GetAll = ({ per_page, search, page, address, name }) => {
+const GetAll = ({ per_page, search, page, address, name, enabled = true }) => {
   const queryResult = useQuery({
     queryKey: ["get-all-branches", per_page, search, page, address, name],
+    enabled,
     queryFn: () => apis.getAll({ per_page, search, page, address, name }),
   });
   return queryResult;
