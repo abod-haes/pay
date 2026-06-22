@@ -55,8 +55,8 @@ const AddBranch = () => {
 
   const isAdd = location.pathname.endsWith("/add");
   const isShow = Boolean(query.get("show") === "true");
-  const id = encryptedId ? decryptId(encryptedId) : null;
-  const isEdit = Boolean(id) && !isShow;
+  const id = !isAdd && encryptedId ? decryptId(encryptedId) : null;
+  const isEdit = Boolean(id) && !isShow && !isAdd;
   const { data, isLoading } = useBranchesQueries.GetOne({ id });
 
   const validationSchema = yup.object().shape({
@@ -188,7 +188,7 @@ const AddBranch = () => {
       <BreadCrumb isAdd title={TITLE} link="/branches" />
       <Card otherStyle={"max-md:!w-full !w-[80%]"}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <LoadingSection isLoading={isLoading} otherStyle={"h-full"} />
+          <LoadingSection isLoading={isLoading && !isAdd} otherStyle={"h-full"} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Input
               name="name"
