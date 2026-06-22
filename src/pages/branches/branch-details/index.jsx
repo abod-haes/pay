@@ -3,7 +3,7 @@
 /* eslint-disable indent */
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { Navigate, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTranslation } from "@hooks/useTranslation";
 import { useForm } from "react-hook-form";
 import Input from "@/components/shared/input";
@@ -13,7 +13,7 @@ import BreadCrumb from "@/components/breadcrumb";
 import PrimaryButton from "@/components/shared/primaryButton";
 import SecondaryButton from "@/components/shared/secondaryButton";
 import { showSuccess } from "@/libs/react.toastify";
-import { decryptId, handleBackendErrors } from "@/utils/helpers";
+import { decryptId, handleBackendErrors, hasPermissionFunction } from "@/utils/helpers";
 import CustomFlexButtons from "@/components/shared/CustomFlexButtons";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -24,6 +24,32 @@ import { apis } from "@/apis/branches/api";
 import useStates from "@/hooks/useStates";
 import PhoneNumber from "@/components/phoneNumber";
 import { getCountries, getCountryCallingCode } from "react-phone-number-input";
+import { PERMISSION_ACTION, PERMISSION_GROUP } from "@/constants/constants";
+
+const isTruthy = value => value === true || value === 1 || value === "1" || value === "true";
+
+const getAuthData = () => {
+  try {
+    const authString = localStorage.getItem("authData") || sessionStorage.getItem("authData");
+    return authString ? JSON.parse(authString) : null;
+  } catch {
+    return null;
+  }
+};
+
+const isAuthBranchMain = () => {
+  const authData = getAuthData();
+  const branch = authData?.user?.branch || authData?.branch;
+
+  return isTruthy(branch?.is_main ?? authData?.user?.branch_is_main ?? authData?.user?.is_main_branch);
+};
+
+const canAccessBranchesManagement = () =>
+  isAuthBranchMain() &&
+  hasPermissionFunction({
+    group: PERMISSION_GROUP.Branch,
+    type: PERMISSION_ACTION.index,
+  });
 
 export const getCountryByCallingCode = code => {
   const countries = getCountries();
@@ -52,12 +78,13 @@ const AddBranch = () => {
   const { id: encryptedId } = useParams();
   const location = useLocation();
   const query = new URLSearchParams(location.search);
+  const canManageBranches = canAccessBranchesManagement();
 
   const isAdd = location.pathname.endsWith("/add");
   const isShow = Boolean(query.get("show") === "true");
   const id = !isAdd && encryptedId ? decryptId(encryptedId) : null;
   const isEdit = Boolean(id) && !isShow && !isAdd;
-  const { data, isLoading } = useBranchesQueries.GetOne({ id });
+  const { data, isLoading } = useBranchesQueries.GetOne({ id: canManageBranches ? id : null });
 
   const validationSchema = yup.object().shape({
     name: yup.string().required(t("validation.required")),
@@ -125,6 +152,8 @@ const AddBranch = () => {
   }, [id, isAdd, data?.data]);
 
   const onSubmit = async data => {
+    if (!canManageBranches) return;
+
     try {
       const dataToSend = {
         name: data.name,
@@ -182,6 +211,10 @@ const AddBranch = () => {
       component: <SecondaryButton text={t("common.cancel2")} onClick={handleCancel} />,
     },
   ];
+
+  if (!canManageBranches) {
+    return <Navigate to="/homepage" replace />;
+  }
 
   return (
     <div>
