@@ -83,6 +83,10 @@ export default function AddPatient() {
       type: PERMISSION_ACTION.assign_admin,
     });
 
+  const currentUserType =
+    currentUser?.type || localStorage.getItem("type") || sessionStorage.getItem("type");
+  const shouldLockAdminField = isEmployeeUser || currentUserType === "admin";
+
   const currentUserEmployeeOption = currentUser
     ? {
       label: currentUser.full_name,
@@ -141,7 +145,16 @@ export default function AddPatient() {
         value: yup.string().required(t("validation.required")),
       })
       .required(t("validation.required")),
-    employee_id: yup.mixed().nullable().notRequired(),
+    employee_id: canAssignAdminToPatient
+      ? yup.mixed().nullable().notRequired()
+      : yup
+          .object()
+          .typeError(t("validation.required"))
+          .shape({
+            label: yup.string().required(t("validation.required")),
+            value: yup.mixed().required(t("validation.required")),
+          })
+          .required(t("validation.required")),
   });
   const { bookingVia } = useBookingVia();
   const genderOptions = [
@@ -293,15 +306,6 @@ export default function AddPatient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, id, data?.data?.data, isRefetching, isLoading]);
 
-  useEffect(() => {
-    if (!canAssignAdminToPatient && watch("employee_id")) {
-      setValue("employee_id", null, {
-        shouldDirty: true,
-        shouldValidate: false,
-      });
-    }
-  }, [canAssignAdminToPatient, setValue, watch]);
-
   const onSubmit = async data => {
     try {
       const dataToSend = {
@@ -312,9 +316,7 @@ export default function AddPatient() {
         city_id: data.city_id.value,
         country: data.country.value,
         address: data.address,
-        ...(canAssignAdminToPatient && data?.employee_id?.value
-          ? { employee_id: data.employee_id.value }
-          : {}),
+        ...(data?.employee_id?.value ? { employee_id: data.employee_id.value } : {}),
         first_phone_number: data.first_phone_number,
         // first_phone_number_country_code: data.first_phone_number_country_code,
         booking_via: data.booking_via.value,
@@ -367,7 +369,7 @@ export default function AddPatient() {
     { component: <SecondaryButton text={t("common.cancel2")} onClick={handleCancel} /> },
   ];
   useEffect(() => {
-    if (canAssignAdminToPatient && isEmployeeUser && currentUserEmployeeOption) {
+    if ((shouldLockAdminField || !canAssignAdminToPatient) && currentUserEmployeeOption) {
       const currentValue = watch("employee_id");
 
       if (!currentValue || currentValue.value !== currentUserEmployeeOption.value) {
@@ -377,7 +379,13 @@ export default function AddPatient() {
         });
       }
     }
-  }, [canAssignAdminToPatient, isEmployeeUser, currentUserEmployeeOption, setValue, watch]);
+  }, [
+    shouldLockAdminField,
+    canAssignAdminToPatient,
+    currentUserEmployeeOption,
+    setValue,
+    watch,
+  ]);
 
   return (
     <div>
@@ -494,17 +502,15 @@ export default function AddPatient() {
               placeholder={t("booking.booked-by")}
               error={errors.booking_via?.message}
             />
-            {canAssignAdminToPatient && (
-              <SelectField
-                name="employee_id"
-                control={control}
-                options={employeeOptions}
-                placeholder={t("surgeries.admin-name")}
-                loading={isLoadingEmployees2}
-                error={errors.employee_id?.message || errors.employee_id?.value?.message}
-                isDisabled={isEmployeeUser}
-              />
-            )}
+            <SelectField
+              name="employee_id"
+              control={control}
+              options={employeeOptions}
+              placeholder={t("surgeries.admin-name")}
+              loading={isLoadingEmployees2}
+              error={errors.employee_id?.message || errors.employee_id?.value?.message}
+              isDisabled={shouldLockAdminField}
+            />
           </div>
           <div className="w-full">
             <MedicalInformation
