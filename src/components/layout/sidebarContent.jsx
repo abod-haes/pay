@@ -29,6 +29,24 @@ import "./sidebar.css";
 import { hasPermissionFunction } from "@utils/helpers";
 import { PERMISSION_GROUP } from "@/constants/constants";
 
+const isTruthy = value => value === true || value === 1 || value === "1" || value === "true";
+
+const getAuthData = () => {
+  try {
+    const authString = localStorage.getItem("authData") || sessionStorage.getItem("authData");
+    return authString ? JSON.parse(authString) : null;
+  } catch {
+    return null;
+  }
+};
+
+const isAuthBranchMain = () => {
+  const authData = getAuthData();
+  const branch = authData?.user?.branch || authData?.branch;
+
+  return isTruthy(branch?.is_main ?? authData?.user?.branch_is_main ?? authData?.user?.is_main_branch);
+};
+
 export default function SidebarContent({ isCollapsed, setIsCollapsed, onClose, isMobile }) {
   const { t } = useTranslation();
   const location = useLocation();
@@ -227,24 +245,14 @@ export default function SidebarContent({ isCollapsed, setIsCollapsed, onClose, i
       link: "/branches",
       type: "single",
       showCondition: () => {
-        try {
-          const authString = localStorage.getItem("authData");
-          // eslint-disable-next-line curly
-          if (!authString) return false;
-          const authData = JSON.parse(authString);
-          const isMain = authData?.user?.branch?.is_main;
+        const hasPermission = hasPermissionFunction({
+          group: PERMISSION_GROUP.Branch,
+          type: "index",
+        });
 
-          // تحقق من الصلاحية
-          const hasPermission = hasPermissionFunction({
-            group: PERMISSION_GROUP.Branch,
-            type: "index",
-          });
-
-          return hasPermission || isMain === true;
-        } catch {
-          return false;
-        }
+        return isAuthBranchMain() && hasPermission;
       },
+      permission: { group: PERMISSION_GROUP.Branch, type: "index" },
     },
     {
       id: "staff",
@@ -401,30 +409,6 @@ export default function SidebarContent({ isCollapsed, setIsCollapsed, onClose, i
     return false;
   };
 
-  // const filterMenuByPermissions = items => {
-  //   return items
-  //     .map(item => {
-  //       if (item.type === "single") {
-  //         // عنصر مفرد
-  //         if (item.permission && hasPermissionFunction(item.permission)) {
-  //           return item;
-  //         }
-  //         return null;
-  //       } else if (item.type === "expandable" && item.children) {
-  //         // عنصر أب
-  //         const filteredChildren = item.children.filter(
-  //           child => !child.permission || hasPermissionFunction(child.permission)
-  //         );
-  //         if (filteredChildren.length > 0) {
-  //           return { ...item, children: filteredChildren };
-  //         }
-  //         return null;
-  //       }
-  //       return null;
-  //     })
-  //     .filter(Boolean);
-  // };
-
   const filterMenuByPermissions = items => {
     return items
       .map(item => {
@@ -519,71 +503,60 @@ export default function SidebarContent({ isCollapsed, setIsCollapsed, onClose, i
                       {/* <item.icon /> */}
                       <img src={item.icon} alt="icon" className="w-[20px] h-[20px]" />
                     </div>
-                    {!isCollapsed && <span className="text-[14px] font-medium">{item.title}</span>}
+                    {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                   </div>
                 </Link>
               ) : (
-                <div
-                  className={`sidebar-item flex items-center mb-2 justify-between h-[45px] px-3 rounded-lg cursor-pointer group ${
-                    hasActiveChild ? "parent-active" : ""
-                  }`}
-                  onClick={() => !isCollapsed && toggleSection(item.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`${isCollapsed ? "mx-auto" : ""}`}>
-                      <img src={item.icon} alt="icon" className="w-[20px] h-[20px]" />
+                <>
+                  <div
+                    className={`sidebar-item flex items-center justify-between h-[45px] px-3 rounded-lg cursor-pointer group ${
+                      hasActiveChild ? "active" : ""
+                    }`}
+                    onClick={() => toggleSection(item.id)}
+                    data-tooltip-id={`tooltip-${item.title}`}
+                    data-tooltip-content={item.title}
+                    data-tooltip-place="right"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`${isCollapsed ? "mx-auto" : ""}`}>
+                        <img src={item.icon} alt="icon" className="w-[20px] h-[20px]" />
+                      </div>
+                      {!isCollapsed && <span className="text-sm font-medium">{item.title}</span>}
                     </div>
-                    {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
+                    {!isCollapsed && (
+                      <img
+                        src={arrowDown}
+                        alt="arrow"
+                        className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      />
+                    )}
                   </div>
-                  {!isCollapsed && (
-                    <div className={`expand-icon ${isExpanded ? "expanded" : ""}`}>
-                      <img src={arrowDown} alt="arrowDown" className="w-[15px] h-[20px]" />
+                  {isExpanded && !isCollapsed && (
+                    <div className="flex flex-col gap-1 mt-1 ps-8">
+                      {item.children.map(child => {
+                        const childActive = isMenuItemActive(child.link);
+                        return (
+                          <Link
+                            key={child.link}
+                            to={child.link}
+                            className={`sidebar-subitem h-[36px] px-3 rounded-lg flex items-center text-sm text-decoration-none ${
+                              childActive ? "active" : ""
+                            }`}
+                            onClick={() => {
+                              if (isMobile && onClose) {
+                                onClose();
+                              }
+                            }}
+                          >
+                            {child.title}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
-                </div>
+                </>
               )}
-
-              {/* Sub items */}
-              {item.type === "expandable" && !isCollapsed && isExpanded && (
-                <div className="expandable-section !space-y-1">
-                  {item.children.map((child, index) => {
-                    const childIsActive = isMenuItemActive(child.link);
-                    return (
-                      <Link
-                        key={index}
-                        to={child.link}
-                        className={`sidebar-item child gap-2 flex items-center h-[40px] px-3 rounded-md cursor-pointer text-decoration-none ${
-                          childIsActive ? "active" : ""
-                        }`}
-                        onClick={() => {
-                          if (isMobile && onClose) {
-                            onClose();
-                          }
-                        }}
-                      >
-                        {/* <img src={child.icon} alt="icon" className="w-[40px] h-[20px]" /> */}
-                        <span className="text-[14px] text-current">{child.title}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Tooltip for collapsed items */}
-              {isCollapsed && (
-                <Tooltip
-                  id={`tooltip-${item.title}`}
-                  style={{
-                    backgroundColor: "white",
-                    color: "black",
-                    fontSize: "14px",
-                    padding: "6px 10px",
-                    borderRadius: "4px",
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    zIndex: 9999,
-                  }}
-                />
-              )}
+              {isCollapsed && <Tooltip id={`tooltip-${item.title}`} />}
             </div>
           );
         })}
